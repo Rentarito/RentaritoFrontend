@@ -1,25 +1,19 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import MachineSelection from './components/MachineSelection';
+import Chat from './components/Chat';
+import machineCache from './helpers/machineCache';
 
-function App() {
+export default function App() {
+  const [selectedMachine, setSelectedMachine] = useState(null);
+
+  // Al seleccionar máquina, cambiamos a la pantalla de chat
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ minHeight: "100vh", background: "#f2f5fa" }}>
+      {!selectedMachine ? (
+        <MachineSelection onSelectMachine={setSelectedMachine} />
+      ) : (
+        <Chat machineFolder={selectedMachine} onBack={() => setSelectedMachine(null)} />
+      )}
     </div>
   );
 }
-
-export default App;
