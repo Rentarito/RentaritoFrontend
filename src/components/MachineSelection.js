@@ -68,95 +68,133 @@ export default function MachineSelection({ onSelectMachine }) {
   };
 
   return (
-    <div
-      className="machine-selection-container"
-      style={{
-        backgroundImage: "url('/assets/fondoapp.jpg')",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center center",
-        backgroundAttachment: "fixed",
-        backgroundSize: "cover",
-        minHeight: "100vh",
-      }}
-    >
-      <div className="selector-card">
-        {/* Header */}
-        <div className="header-selection">
-          <div className="title-header">Chatea con Rentaire</div>
-        </div>
-
-        {/* QR Button: lo movemos encima del buscador */}
+    <div style={{
+      position: "relative",
+      minHeight: "100vh",
+      width: "100vw",
+      overflowX: "hidden",
+    }}>
+      {/* Fondo fijo detrás */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 0,
+          backgroundImage: "url('/assets/fondoapp.jpg')",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Contenido centrado y estrecho delante */}
+      <div
+        className="machine-selection-container"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          minHeight: "100vh",
+          width: "100vw",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          paddingTop: "8vw", // Ajusta si quieres más arriba
+          boxSizing: "border-box",
+        }}
+      >
         <div
-          className="btn-escanear-qr"
-          tabIndex={0}
-          onClick={handleQR}
+          className="selector-card"
           style={{
-            marginTop: "15vw",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#0198f1",
+            width: "100%",
+            maxWidth: 400, // Cambia aquí el ancho máximo
+            margin: "0 auto",
+            boxShadow: "0 4px 24px rgba(0,0,0,0.07)",
             borderRadius: 18,
-            padding: "10px 5px",
-            cursor: "pointer",
-            color: "white",
-            fontWeight: "bold",
-            fontSize: 18,
-            marginBottom: "6vw",
+            background: "rgba(255,255,255,0.85)",
+            padding: "4vw",
           }}
         >
-          Escanear QR de la máquina
-          <img
-            src="/assets/qr.png"
-            alt="QR"
-            style={{ marginLeft: 10, width: 35, height: 35, backgroundColor: "#0198f1"}}
-          />
-        </div>
-
-        {/* Buscador y desplegable */}
-        <div className="search-row">
-          <div className="autocomplete-container">
-            <input
-              type="text"
-              className="autocomplete-input"
-              placeholder="Buscar máquina"
-              value={input}
-              ref={inputRef}
-              onFocus={() => setShowDropdown(true)}
-              onChange={e => setInput(e.target.value)}
-              style={{ minWidth: 0 }}
-            />
-            <button
-              className="icon-button"
-              style={{ marginLeft: 4, background: "none", border: "none", cursor: "pointer" }}
-              onClick={() => setShowDropdown(s => !s)}
-              tabIndex={-1}
-              aria-label="Abrir selector"
-            >
-              <img src={dropdownIcon} style={{ width: 28, height: 28 }} alt="Desplegar" />
-            </button>
-            {/* Dropdown */}
-            {showDropdown && (
-              <div className="dropdown">
-                {filtered.length === 0 && (
-                  <div className="dropdown-item disabled">No hay resultados</div>
-                )}
-                {filtered.map((machine, idx) => (
-                  <div
-                    className="dropdown-item"
-                    key={machine + idx}
-                    onMouseDown={() => handleSelect(machine)}
-                  >
-                    {machine}
-                  </div>
-                ))}
-              </div>
-            )}
+          {/* Header */}
+          <div className="header-selection">
+            <div className="title-header">Chatea con Rentaire</div>
           </div>
-        </div>
 
-        {/* Error */}
-        {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
+          {/* QR Button: lo movemos encima del buscador */}
+          <div
+            className="btn-escanear-qr"
+            tabIndex={0}
+            onClick={handleQR}
+            style={{
+              marginTop: "10vw",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "#0198f1",
+              borderRadius: 18,
+              padding: "10px 5px",
+              cursor: "pointer",
+              color: "white",
+              fontWeight: "bold",
+              fontSize: 18,
+              marginBottom: "4vw",
+            }}
+          >
+            Escanear QR de la máquina
+            <img
+              src="/assets/qr.png"
+              alt="QR"
+              style={{ marginLeft: 10, width: 35, height: 35, backgroundColor: "#0198f1"}}
+            />
+          </div>
+
+          {/* Buscador y desplegable */}
+          <div className="search-row">
+            <div className="autocomplete-container">
+              <input
+                type="text"
+                className="autocomplete-input"
+                placeholder="Buscar máquina"
+                value={input}
+                ref={inputRef}
+                onFocus={() => setShowDropdown(true)}
+                onChange={e => setInput(e.target.value)}
+                style={{ minWidth: 0 }}
+              />
+              <button
+                className="icon-button"
+                style={{ marginLeft: 4, background: "none", border: "none", cursor: "pointer" }}
+                onClick={() => setShowDropdown(s => !s)}
+                tabIndex={-1}
+                aria-label="Abrir selector"
+              >
+                <img src={dropdownIcon} style={{ width: 28, height: 28 }} alt="Desplegar" />
+              </button>
+              {/* Dropdown */}
+              {showDropdown && (
+                <div className="dropdown">
+                  {filtered.length === 0 && (
+                    <div className="dropdown-item disabled">No hay resultados</div>
+                  )}
+                  {filtered.map((machine, idx) => (
+                    <div
+                      className="dropdown-item"
+                      key={machine + idx}
+                      onMouseDown={() => handleSelect(machine)}
+                    >
+                      {machine}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Error */}
+          {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
+        </div>
       </div>
     </div>
   );
