@@ -77,7 +77,6 @@ export default function MachineSelection({ onSelectMachine }) {
         backgroundAttachment: "fixed",
         backgroundSize: "cover",
         minHeight: "100vh",
-        width: "100vw",
       }}
     >
       <div className="selector-card">
@@ -92,7 +91,7 @@ export default function MachineSelection({ onSelectMachine }) {
           tabIndex={0}
           onClick={handleQR}
           style={{
-            marginTop: "30vw",
+            marginTop: "15vw",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
