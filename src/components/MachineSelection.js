@@ -68,7 +68,17 @@ export default function MachineSelection({ onSelectMachine }) {
   };
 
   return (
-    <div className="machine-selection-container">
+    <div
+      className="machine-selection-container"
+      style={{
+        backgroundImage: "url('/assets/fondoapp.jpg')",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center center",
+        backgroundAttachment: "fixed",
+        backgroundSize: "cover",
+        minHeight: "100vh",
+      }}
+    >
       <div className="selector-card">
         {/* Header */}
         <div className="header-selection">
