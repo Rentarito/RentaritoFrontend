@@ -75,8 +75,8 @@ export default function MachineSelection({ onSelectMachine }) {
           position: "fixed",
           top: 0,
           left: 0,
-          width: "100vw",
-          height: "100vh",
+          right: 0,
+          bottom: 0,
           zIndex: 0,
           backgroundImage: "url('/assets/fondoapp.jpg')",
           backgroundRepeat: "no-repeat",
@@ -107,7 +107,7 @@ export default function MachineSelection({ onSelectMachine }) {
           tabIndex={0}
           onClick={handleQR}
           style={{
-            marginTop: "30vw",
+            marginTop: "15vw",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
