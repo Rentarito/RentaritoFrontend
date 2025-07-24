@@ -75,8 +75,9 @@ export default function MachineSelection({ onSelectMachine }) {
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
         backgroundAttachment: "fixed",
-        backgroundSize: "cover",
+        backgroundSize: "contain",
         minHeight: "100vh",
+        width: "100vw"
       }}
     >
       <div className="selector-card">
