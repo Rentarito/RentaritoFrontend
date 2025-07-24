@@ -34,7 +34,7 @@ html, body, #root {
 
 .selector-card {
   background: white;
-  border-radius: 0 0 24px 24px;
+  border-radius:rgba(255,255,255,0.85);
   box-shadow: none;
   padding: 0;
   min-width: 0;
