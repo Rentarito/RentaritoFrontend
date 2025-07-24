@@ -24,8 +24,7 @@ html, body, #root {
   min-height: 100vh;
   height: 100vh;
   width: 100vw;
-  background: url('/assets/fondoapp.jpg') no-repeat center center fixed;
-  background-size: cover;
+  background: #f2f5fa;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
