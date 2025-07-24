@@ -76,7 +76,7 @@ export default function MachineSelection({ onSelectMachine }) {
           top: 0,
           left: 0,
           width: "100vw",
-          height: "100dvh",
+          height: "100vh",
           zIndex: 0,
           backgroundImage: "url('/assets/fondoapp.jpg')",
           backgroundRepeat: "no-repeat",
