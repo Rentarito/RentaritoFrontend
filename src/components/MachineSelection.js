@@ -68,25 +68,59 @@ export default function MachineSelection({ onSelectMachine }) {
   };
 
   return (
-    <div
-      className="machine-selection-container"
-      style={{
-        backgroundImage: "url('/assets/fondoapp.jpg')",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center center",
-        backgroundAttachment: "fixed",
-        backgroundSize: "contain",
-        minHeight: "100vh",
-        width: "100vw"
-      }}
-    >
+  <div style={{
+    position: "relative",
+    minHeight: "100vh",
+    width: "100vw",
+    overflow: "hidden"
+  }}>
+    {/* Fondo blur desenfocado para rellenar huecos */}
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      zIndex: 0,
+      backgroundImage: "url('/assets/fondoapp.jpg')",
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "center center",
+      backgroundSize: "cover",
+      filter: "blur(16px) brightness(1.1)",
+      opacity: 0.75,
+      pointerEvents: "none",
+    }} />
+    {/* Imagen principal completa, nunca recortada */}
+    <div style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      zIndex: 1,
+      backgroundImage: "url('/assets/fondoapp.jpg')",
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "center center",
+      backgroundSize: "contain",
+      pointerEvents: "none",
+    }} />
+    {/* Contenido por encima */}
+    <div className="machine-selection-container" style={{
+      position: "relative",
+      zIndex: 2,
+      minHeight: "100vh",
+      width: "100vw",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "flex-start"
+    }}>
       <div className="selector-card">
         {/* Header */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
 
-        {/* QR Button: lo movemos encima del buscador */}
+        {/* QR Button */}
         <div
           className="btn-escanear-qr"
           tabIndex={0}
@@ -160,5 +194,7 @@ export default function MachineSelection({ onSelectMachine }) {
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
-  );
+  </div>
+);
+
 }
