@@ -68,17 +68,32 @@ export default function MachineSelection({ onSelectMachine }) {
   };
 
   return (
-    <div
-      className="machine-selection-container"
-      style={{
-        backgroundImage: "url('/assets/fondoapp.jpg')",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center center",
-        backgroundAttachment: "fixed",
-        backgroundSize: "cover",
-        minHeight: "100vh",
-        width: "100vw",
-      }}
+    <div style={{ position: "relative", minHeight: "100vh", width: "100vw" }}>
+      {/* Fondo fijo detrás */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 0,
+          backgroundImage: "url('/assets/fondoapp.jpg')",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          pointerEvents: "none", // para que nunca tape clicks
+        }}
+      />
+      {/* Contenido delante */}
+      <div
+        className="machine-selection-container"
+        style={{
+          position: "relative",
+          zIndex: 1,
+          minHeight: "100vh",
+          width: "100vw",
+        }}
     >
       <div className="selector-card">
         {/* Header */}
@@ -92,7 +107,7 @@ export default function MachineSelection({ onSelectMachine }) {
           tabIndex={0}
           onClick={handleQR}
           style={{
-            marginTop: "60vw",
+            marginTop: "30vw",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -160,5 +175,6 @@ export default function MachineSelection({ onSelectMachine }) {
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
+  </div>
   );
 }
