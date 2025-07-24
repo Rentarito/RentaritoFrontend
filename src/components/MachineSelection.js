@@ -77,6 +77,7 @@ export default function MachineSelection({ onSelectMachine }) {
         backgroundAttachment: "fixed",
         backgroundSize: "cover",
         minHeight: "100vh",
+        width: "100vw",
       }}
     >
       <div className="selector-card">

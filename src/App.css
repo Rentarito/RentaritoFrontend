@@ -20,7 +20,7 @@ html, body, #root {
 /* =========================
    SELECCIÓN DE MÁQUINA
 ========================= */
-.machine-selection-container {
+/*.machine-selection-container {
   min-height: 100vh;
   height: 100vh;
   width: 100vw;
@@ -30,7 +30,7 @@ html, body, #root {
   justify-content: flex-start;
   align-items: stretch;
   padding: 0;
-}
+}*/
 
 .selector-card {
   background: white;
