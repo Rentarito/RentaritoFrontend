@@ -74,12 +74,34 @@ export default function Chat({ machineFolder, onBack }) {
 
   return (
     <div className="chat-root">
-      {/* Header */}
-      <div className="chat-header">
-        <button className="chat-back" onClick={onBack} title="Volver">
+      {/* Header igual al de MachineSelection */}
+      <div className="header-selection">
+        <button
+          className="chat-back"
+          onClick={onBack}
+          title="Volver"
+          style={{
+            background: "none",
+            border: "none",
+            fontSize: "6vw",
+            minFontSize: 18,
+            maxFontSize: 20,
+            color: "#fff",
+            marginRight: "2vw",
+            cursor: "pointer"
+          }}
+        >
           ⬅
         </button>
-        <span className="chat-title">Chatea con Rentaire</span>
+        <div className="title-header" style={{
+          color: "#fff",
+          fontSize: "6vw",
+          fontWeight: "bold",
+          flex: 1,
+          textAlign: "center"
+        }}>
+          Chatea con Rentaire
+        </div>
       </div>
 
       {/* Chat area */}
