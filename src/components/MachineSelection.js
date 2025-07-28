@@ -80,28 +80,55 @@ export default function MachineSelection({ onSelectMachine }) {
           setShowQr(false);
           await scanner.current.stop().then(() => scanner.current.clear());
           try {
-            // 1. Consultar la API usando el código escaneado
             const apiUrl = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
             const response = await fetch(apiUrl, {
               method: "GET",
               headers: { "Content-Type": "application/json" }
             });
-            if (!response.ok) throw new Error("Error consultando API");
 
-            const result = await response.json();
+            let responseText = "";
+            let result = {};
+            let errorMessage = "";
+
+            try {
+              responseText = await response.text();
+              // Intenta parsear como JSON (si se puede)
+              try {
+                result = JSON.parse(responseText);
+              } catch {
+                // No es JSON
+                result = {};
+              }
+            } catch (e) {
+              errorMessage += "Error leyendo respuesta: " + e.message + "\n";
+            }
+
+            if (!response.ok) {
+              errorMessage += `Código HTTP: ${response.status}\nRespuesta: ${responseText}\n`;
+              throw new Error(errorMessage);
+            }
+
             const folderName = result?.Result?.trim() ?? "";
 
-            // 2. Busca en la lista local de máquinas (coincidencia exacta, insensible a mayúsculas)
+            // Busca en la lista local de máquinas (coincidencia exacta, insensible a mayúsculas)
             const found = machines.find(m => m.trim().toLowerCase() === folderName.toLowerCase());
 
             if (!folderName || !found) {
-              alert("❌ El QR escaneado no pertenece a ninguna máquina o la máquina no tiene manuales disponibles.");
+              alert(
+                "❌ El QR escaneado no pertenece a ninguna máquina o la máquina no tiene manuales disponibles.\n\n" +
+                `API dice: "${folderName}"\nRespuesta completa:\n${JSON.stringify(result)}`
+              );
             } else {
               handleSelect(found); // Entra al chat de la máquina
             }
           } catch (err) {
-            alert("❌ Error consultando la API del QR");
+            alert(
+              "❌ Error consultando la API del QR:\n\n" +
+              (err && err.message ? err.message : "") +
+              "\n\n(Este error puede deberse a CORS, red, permisos, o a la propia API)"
+            );
           }
+
         },
         (err) => {
           // Puedes loguear errores si quieres
