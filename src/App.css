@@ -276,7 +276,7 @@ html, body, #root {
 }
 
 .chat-input {
-  flex: 0.8;
+  flex: 0.6;
   font-size: 4vw;
   min-font-size: 14px;
   max-font-size: 16px;

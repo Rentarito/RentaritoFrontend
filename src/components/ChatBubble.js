@@ -12,7 +12,7 @@ export default function ChatBubble({ message, isUser }) {
     >
       <div
         style={{
-        background: isUser ? "#c7e0fb" : "#56bffcff",
+        background: isUser ? "#c7e0fb" : "#0198f1",
         color: isUser ? "#25416A" : "#fff",
         borderRadius: 18,
         padding: "12px 18px",
