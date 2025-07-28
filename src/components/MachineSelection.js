@@ -74,81 +74,91 @@ export default function MachineSelection({ onSelectMachine }) {
 
   // Inicia/detiene el escáner QR al abrir/cerrar modal
   useEffect(() => {
-    if (showQr && qrRef.current) {
-      scanner.current = new Html5Qrcode(qrRef.current.id);
-      scanner.current.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        async (decodedText) => {
+  if (showQr && qrRef.current) {
+    scanner.current = new Html5Qrcode(qrRef.current.id);
+    scanner.current.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      async (decodedText) => {
+        try {
           setShowQr(false);
-          await scanner.current.stop().then(() => scanner.current.clear());
+          if (scanner.current) await scanner.current.stop().then(() => scanner.current.clear());
+          // NOTA: console.log es útil en desktop, pero alert siempre muestra en móvil
+          alert("[INFO] Código QR leído: " + decodedText);
+
+          // ------- Petición al backend (proxy) ------
+          const apiUrl = `${backendUrl}/proxy-qr?rentalElement=${encodeURIComponent(decodedText)}`;
+          let response, responseText, result, folderName, found;
           try {
-            // ------ CAMBIO AQUÍ: Usar backend proxy ------
-            const apiUrl = `${backendUrl}/proxy-qr?rentalElement=${encodeURIComponent(decodedText)}`;
-            const response = await fetch(apiUrl, {
+            response = await fetch(apiUrl, {
               method: "GET",
               headers: { "Content-Type": "application/json" }
             });
-
-            let responseText = "";
-            let result = {};
-            let errorMessage = "";
-
-            try {
-              responseText = await response.text();
-              // Intenta parsear como JSON (si se puede)
-              try {
-                result = JSON.parse(responseText);
-              } catch {
-                // No es JSON
-                result = {};
-              }
-            } catch (e) {
-              errorMessage += "Error leyendo respuesta: " + e.message + "\n";
-            }
-
-            if (!response.ok) {
-              errorMessage += `Código HTTP: ${response.status}\nRespuesta: ${responseText}\n`;
-              throw new Error(errorMessage);
-            }
-
-            const folderName = result?.Result?.trim() ?? "";
-
-            // Busca en la lista local de máquinas (coincidencia exacta, insensible a mayúsculas)
-            const found = machines.find(m => m.trim().toLowerCase() === folderName.toLowerCase());
-
-            if (!folderName || !found) {
-              alert(
-                "❌ El QR escaneado no pertenece a ninguna máquina o la máquina no tiene manuales disponibles.\n\n" +
-                `API dice: "${folderName}"\nRespuesta completa:\n${JSON.stringify(result)}`
-              );
-            } else {
-              handleSelect(found); // Entra al chat de la máquina
-            }
-          } catch (err) {
-            alert(
-              "❌ Error consultando la API del QR:\n\n" +
-              (err && err.message ? err.message : "") +
-              "\n\n(Este error puede deberse a CORS, red, permisos, o a la propia API)"
-            );
+          } catch (fetchErr) {
+            alert("❌ Error de red al consultar backend:\n" + fetchErr.message);
+            return;
           }
 
-        },
-        (err) => {
-          // Puedes loguear errores si quieres
+          try {
+            responseText = await response.text();
+          } catch (readErr) {
+            alert("❌ Error leyendo respuesta del backend:\n" + readErr.message);
+            return;
+          }
+
+          try {
+            result = JSON.parse(responseText);
+          } catch {
+            result = {};
+            alert("❌ El backend no devolvió JSON. Respuesta:\n" + responseText);
+            return;
+          }
+
+          if (!response.ok) {
+            alert(`❌ Código HTTP: ${response.status}\nRespuesta: ${JSON.stringify(result)}`);
+            return;
+          }
+
+          folderName = result?.Result?.trim() ?? "";
+          found = machines.find(m => m.trim().toLowerCase() === folderName.toLowerCase());
+
+          if (!folderName || !found) {
+            alert(
+              "❌ El QR escaneado no pertenece a ninguna máquina o la máquina no tiene manuales disponibles.\n\n" +
+              `API dice: "${folderName}"\nRespuesta completa:\n${JSON.stringify(result)}`
+            );
+            return;
+          }
+
+          // ¡Si llega aquí, todo ok!
+          alert("✅ Máquina reconocida: " + folderName);
+          handleSelect(found);
+        } catch (err) {
+          setShowQr(false);
+          alert(
+            "❌ Error inesperado tras escanear QR:\n" +
+            (err && err.message ? err.message : String(err))
+          );
         }
-      ).catch((e) => {
-        alert("No se pudo acceder a la cámara o el permiso fue denegado.");
+      },
+      (err) => {
+        // Error en el escaneo
         setShowQr(false);
-      });
-    }
-    return () => {
-      if (scanner.current) {
-        scanner.current.stop().then(() => scanner.current.clear());
+        alert("❌ Error en la lectura del QR (cámara): " + String(err));
       }
-    };
-    // eslint-disable-next-line
-  }, [showQr, machines]);
+    ).catch((e) => {
+      setShowQr(false);
+      alert("No se pudo acceder a la cámara o el permiso fue denegado.");
+    });
+  }
+  return () => {
+    if (scanner.current) {
+      scanner.current.stop().then(() => scanner.current.clear());
+    }
+  };
+  // eslint-disable-next-line
+}, [showQr, machines]);
+
 
   return (
     <div
