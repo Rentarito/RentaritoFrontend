@@ -17,6 +17,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [showQr, setShowQr] = useState(false);
   const qrRef = useRef(null);
   const scannerRef = useRef(null);
+  const inputRef = useRef();
 
   useEffect(() => {
     async function loadMachines() {
