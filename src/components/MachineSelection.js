@@ -15,7 +15,6 @@ export default function MachineSelection({ onSelectMachine }) {
 
   const inputRef = useRef();
 
-  // Cargar máquinas al iniciar
   useEffect(() => {
     async function loadMachines() {
       try {
@@ -33,7 +32,6 @@ export default function MachineSelection({ onSelectMachine }) {
     loadMachines();
   }, []);
 
-  // Filtrar máquinas por búsqueda
   useEffect(() => {
     if (input.trim() === "") {
       setFiltered(machines);
@@ -50,7 +48,6 @@ export default function MachineSelection({ onSelectMachine }) {
     ? "/assets/ic_arrow_drop_down.svg"
     : "/assets/ic_arrow_right.svg";
 
-  // Selección manual o por QR
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
@@ -58,13 +55,16 @@ export default function MachineSelection({ onSelectMachine }) {
     setTimeout(() => onSelectMachine(machine), 300);
   };
 
-  // Escanear código QR con cámara
   const handleQR = async () => {
+    console.log("🟡 handleQR fue llamado");
+
     const qrRegionId = "qr-reader";
     const html5QrCode = new Html5Qrcode(qrRegionId);
 
     try {
       const devices = await Html5Qrcode.getCameras();
+      console.log("📷 Cámaras disponibles:", devices);
+
       if (!devices || devices.length === 0) {
         alert("No se detectó ninguna cámara.");
         return;
@@ -80,6 +80,8 @@ export default function MachineSelection({ onSelectMachine }) {
           qrbox: { width: 250, height: 250 },
         },
         async (decodedText, decodedResult) => {
+          console.log("✅ Código QR leído:", decodedText);
+
           await html5QrCode.stop();
           document.getElementById(qrRegionId).innerHTML = "";
           setScanning(false);
@@ -93,6 +95,7 @@ export default function MachineSelection({ onSelectMachine }) {
 
             const result = await response.json();
             const folderName = result.Result?.trim();
+            console.log("📁 Resultado de API:", folderName);
 
             if (!folderName || !machines.includes(folderName)) {
               alert(
@@ -103,18 +106,18 @@ export default function MachineSelection({ onSelectMachine }) {
 
             handleSelect(folderName);
           } catch (err) {
-            console.error("Error al consultar la máquina:", err);
+            console.error("❌ Error consultando la máquina:", err);
             alert("Error consultando la máquina.");
           }
         },
         (errorMessage) => {
-          console.warn("Error escaneando QR:", errorMessage);
+          console.warn("⚠️ Error escaneando QR:", errorMessage);
         }
       );
     } catch (err) {
-      console.error("Error accediendo a la cámara:", err);
+      console.error("❌ Error accediendo a la cámara:", err);
       alert(
-        "No se pudo acceder a la cámara. Verifica que el navegador tiene permisos."
+        "No se pudo acceder a la cámara. Verifica que el navegador tiene permisos y estás en HTTPS."
       );
     }
   };
@@ -132,12 +135,11 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card">
-        {/* Encabezado */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
 
-        {/* Botón escanear QR */}
+        {/* Botón QR */}
         <div
           className="btn-escanear-qr"
           tabIndex={0}
@@ -170,7 +172,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Zona escáner QR */}
+        {/* Escáner QR activo */}
         {scanning && (
           <div
             id="qr-reader"
@@ -183,7 +185,7 @@ export default function MachineSelection({ onSelectMachine }) {
           ></div>
         )}
 
-        {/* Buscador y desplegable */}
+        {/* Buscador */}
         <div className="search-row">
           <div className="autocomplete-container">
             <input
@@ -233,7 +235,7 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
-        {/* Mensaje de error */}
+        {/* Error */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
