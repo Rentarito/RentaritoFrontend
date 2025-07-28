@@ -21,6 +21,9 @@ export default function MachineSelection({ onSelectMachine }) {
   const qrRef = useRef(null);
   const scanner = useRef(null);
 
+  // Cambia aquí tu backend render real:
+  const backendUrl = "https://rentaritobackend-swcw.onrender.com"; // <--- CAMBIA esto si tu URL es otra
+
   // Cargar máquinas al iniciar
   useEffect(() => {
     async function loadMachines() {
@@ -80,7 +83,8 @@ export default function MachineSelection({ onSelectMachine }) {
           setShowQr(false);
           await scanner.current.stop().then(() => scanner.current.clear());
           try {
-            const apiUrl = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
+            // ------ CAMBIO AQUÍ: Usar backend proxy ------
+            const apiUrl = `${backendUrl}/proxy-qr?rentalElement=${encodeURIComponent(decodedText)}`;
             const response = await fetch(apiUrl, {
               method: "GET",
               headers: { "Content-Type": "application/json" }
