@@ -81,7 +81,7 @@ export default function MachineSelection({ onSelectMachine }) {
           setShowQr(false);
           await scanner.current.stop().then(() => scanner.current.clear());
           try {
-            const apiUrl = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
+            const apiUrl = `https://businesscentral.rentaire.es:10043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
             const response = await fetch(apiUrl, {
               method: "GET",
               headers: { "Content-Type": "application/json" }
