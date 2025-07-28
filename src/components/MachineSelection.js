@@ -55,72 +55,80 @@ export default function MachineSelection({ onSelectMachine }) {
     setTimeout(() => onSelectMachine(machine), 300);
   };
 
-  const handleQR = async () => {
+  const handleQR = () => {
     console.log("🟡 handleQR fue llamado");
+    setScanning(true);
+  };
 
+  // Activar escáner solo cuando scanning === true y el div ya está en el DOM
+  useEffect(() => {
     const qrRegionId = "qr-reader";
+    if (!scanning) return;
+
     const html5QrCode = new Html5Qrcode(qrRegionId);
 
-    try {
-      const devices = await Html5Qrcode.getCameras();
-      console.log("📷 Cámaras disponibles:", devices);
-
-      if (!devices || devices.length === 0) {
-        alert("No se detectó ninguna cámara.");
-        return;
-      }
-
-      const cameraId = devices[0].id;
-      setScanning(true);
-
-      html5QrCode.start(
-        cameraId,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        async (decodedText, decodedResult) => {
-          console.log("✅ Código QR leído:", decodedText);
-
-          await html5QrCode.stop();
-          document.getElementById(qrRegionId).innerHTML = "";
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        console.log("📷 Cámaras detectadas:", devices);
+        if (!devices || devices.length === 0) {
+          alert("No se detectó ninguna cámara.");
           setScanning(false);
-
-          try {
-            const response = await fetch(
-              `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(
-                JSON.stringify({ rentalElement: decodedText })
-              )}`
-            );
-
-            const result = await response.json();
-            const folderName = result.Result?.trim();
-            console.log("📁 Resultado de API:", folderName);
-
-            if (!folderName || !machines.includes(folderName)) {
-              alert(
-                "El QR no pertenece a una máquina válida o no hay manuales disponibles."
-              );
-              return;
-            }
-
-            handleSelect(folderName);
-          } catch (err) {
-            console.error("❌ Error consultando la máquina:", err);
-            alert("Error consultando la máquina.");
-          }
-        },
-        (errorMessage) => {
-          console.warn("⚠️ Error escaneando QR:", errorMessage);
+          return;
         }
-      );
-    } catch (err) {
-      console.error("❌ Error accediendo a la cámara:", err);
-      alert(
-        "No se pudo acceder a la cámara. Verifica que el navegador tiene permisos y estás en HTTPS."
-      );
-    }
-  };
+
+        const cameraId = devices[0].id;
+
+        html5QrCode
+          .start(
+            cameraId,
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            async (decodedText) => {
+              console.log("✅ Código escaneado:", decodedText);
+              await html5QrCode.stop();
+              document.getElementById(qrRegionId).innerHTML = "";
+              setScanning(false);
+
+              try {
+                const response = await fetch(
+                  `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(
+                    JSON.stringify({ rentalElement: decodedText })
+                  )}`
+                );
+
+                const result = await response.json();
+                const folderName = result.Result?.trim();
+
+                if (!folderName || !machines.includes(folderName)) {
+                  alert("El QR no pertenece a una máquina válida.");
+                  return;
+                }
+
+                handleSelect(folderName);
+              } catch (err) {
+                console.error("❌ Error en la API:", err);
+                alert("Error al consultar la máquina.");
+              }
+            },
+            (errorMessage) => {
+              console.warn("⚠️ Error escaneando:", errorMessage);
+            }
+          )
+          .catch((err) => {
+            console.error("❌ Error al iniciar escáner:", err);
+            alert("No se pudo iniciar el escáner.");
+            setScanning(false);
+          });
+      })
+      .catch((err) => {
+        console.error("❌ Error accediendo a cámara:", err);
+        alert("Permiso de cámara denegado o no disponible.");
+        setScanning(false);
+      });
+
+    return () => {
+      html5QrCode.stop().catch(() => {});
+    };
+  }, [scanning]);
 
   return (
     <div
@@ -135,6 +143,7 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card">
+        {/* Encabezado */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
@@ -172,7 +181,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Escáner QR activo */}
+        {/* Lector QR */}
         {scanning && (
           <div
             id="qr-reader"
