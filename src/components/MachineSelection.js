@@ -104,10 +104,23 @@ export default function MachineSelection({ onSelectMachine }) {
                 const folderNameLower = folderName.toLowerCase();
                 const match = machines.find(m => m.toLowerCase() === folderNameLower);
 
-                if (!match) {
+                if (!folderName) {
+                  alert("El QR no devolvió ningún nombre de máquina.");
+                  return;
+                }
+
+                // Normalizamos para comparar ignorando mayúsculas, espacios, etc.
+                const normalize = str => str.toLowerCase().replace(/\s|-/g, "");
+
+                const folderNorm = normalize(folderName);
+                const matched = machines.find(m => normalize(m) === folderNorm);
+
+                if (!matched) {
                   alert("El QR no pertenece a una máquina válida.");
                   return;
                 }
+
+                handleSelect(matched);
 
                 handleSelect(match);
 
