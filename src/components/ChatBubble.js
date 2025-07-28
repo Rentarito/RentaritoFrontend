@@ -12,17 +12,17 @@ export default function ChatBubble({ message, isUser }) {
     >
       <div
         style={{
-          background: isUser ? "#E6F0FC" : "#0198f1",
-          color: isUser ? "#25416A" : "#fff",
-          borderRadius: 18,
-          padding: "12px 18px",
-          maxWidth: 320,
-          fontSize: 15,
-          fontWeight: 400,
-          boxShadow: isUser ? "0 2px 7px #E6F0FC" : "0 2px 7px #d1e3ff",
-          alignSelf: isUser ? "flex-end" : "flex-start",
-          whiteSpace: "pre-line",
-        }}
+        background: isUser ? "#c7e0fb" : "#56bffcff",
+        color: isUser ? "#25416A" : "#fff",
+        borderRadius: 18,
+        padding: "12px 18px",
+        maxWidth: 320,
+        fontSize: 15,
+        fontWeight: 400,
+        boxShadow: isUser ? "0 2px 7px #bdd7ee" : "0 2px 7px #d1e3ff",
+        alignSelf: isUser ? "flex-end" : "flex-start",
+        whiteSpace: "pre-line",
+      }}
       >
         {message}
       </div>
