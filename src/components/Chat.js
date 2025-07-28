@@ -152,7 +152,7 @@ export default function Chat({ machineFolder, onBack }) {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         disabled={loading}
-        style={{ maxWidth: "60vw" }}
+        style={{ maxWidth: "10vw" }}
       />
       <button className="chat-clear" onClick={clearChat} title="Limpiar conversación">
         🔄
