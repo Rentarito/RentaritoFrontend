@@ -2,10 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchMachines } from "../helpers/api";
-import "../App.css";
-
-// Importa la librería QR
-import { Html5Qrcode } from "html5-qrcode";
+import "../App.css"; // Asegúrate de tener estilos básicos
 
 export default function MachineSelection({ onSelectMachine }) {
   const [machines, setMachines] = useState([]);
@@ -15,14 +12,6 @@ export default function MachineSelection({ onSelectMachine }) {
   const [error, setError] = useState(null);
 
   const inputRef = useRef();
-
-  // QR state
-  const [showQr, setShowQr] = useState(false);
-  const qrRef = useRef(null);
-  const scanner = useRef(null);
-
-  // Cambia aquí tu backend render real:
-  const backendUrl = "https://rentaritobackend-swcw.onrender.com"; // <--- CAMBIA esto si tu URL es otra
 
   // Cargar máquinas al iniciar
   useEffect(() => {
@@ -67,98 +56,16 @@ export default function MachineSelection({ onSelectMachine }) {
     setTimeout(() => onSelectMachine(machine), 300); // Simula navegación
   };
 
-  // Escanear QR usando la cámara
+  // Simulación de QR (puedes hacer prompt para pegar código manual)
   const handleQR = () => {
-    setShowQr(true);
+    const code = window.prompt("Pega el código QR de la máquina:");
+    if (!code) return;
+    // Busca si el QR coincide con el nombre de máquina
+    // Puedes adaptar esto a llamar a una API si tienes lógica QR->nombre
+    const found = machines.find(m => m.toLowerCase().includes(code.toLowerCase()));
+    if (found) handleSelect(found);
+    else alert("QR no reconocido o máquina no encontrada.");
   };
-
-  // Inicia/detiene el escáner QR al abrir/cerrar modal
-  useEffect(() => {
-  if (showQr && qrRef.current) {
-    scanner.current = new Html5Qrcode(qrRef.current.id);
-    scanner.current.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      async (decodedText) => {
-        try {
-          setShowQr(false);
-          if (scanner.current) await scanner.current.stop().then(() => scanner.current.clear());
-          // NOTA: console.log es útil en desktop, pero alert siempre muestra en móvil
-          alert("[INFO] Código QR leído: " + decodedText);
-
-          // ------- Petición al backend (proxy) ------
-          const apiUrl = `${backendUrl}/proxy-qr?rentalElement=${encodeURIComponent(decodedText)}`;
-          let response, responseText, result, folderName, found;
-          try {
-            response = await fetch(apiUrl, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" }
-            });
-          } catch (fetchErr) {
-            alert("❌ Error de red al consultar backend:\n" + fetchErr.message);
-            return;
-          }
-
-          try {
-            responseText = await response.text();
-          } catch (readErr) {
-            alert("❌ Error leyendo respuesta del backend:\n" + readErr.message);
-            return;
-          }
-
-          try {
-            result = JSON.parse(responseText);
-          } catch {
-            result = {};
-            alert("❌ El backend no devolvió JSON. Respuesta:\n" + responseText);
-            return;
-          }
-
-          if (!response.ok) {
-            alert(`❌ Código HTTP: ${response.status}\nRespuesta: ${JSON.stringify(result)}`);
-            return;
-          }
-
-          folderName = result?.Result?.trim() ?? "";
-          found = machines.find(m => m.trim().toLowerCase() === folderName.toLowerCase());
-
-          if (!folderName || !found) {
-            alert(
-              "❌ El QR escaneado no pertenece a ninguna máquina o la máquina no tiene manuales disponibles.\n\n" +
-              `API dice: "${folderName}"\nRespuesta completa:\n${JSON.stringify(result)}`
-            );
-            return;
-          }
-
-          // ¡Si llega aquí, todo ok!
-          alert("✅ Máquina reconocida: " + folderName);
-          handleSelect(found);
-        } catch (err) {
-          setShowQr(false);
-          alert(
-            "❌ Error inesperado tras escanear QR:\n" +
-            (err && err.message ? err.message : String(err))
-          );
-        }
-      },
-      (err) => {
-        // Error en el escaneo
-        setShowQr(false);
-        alert("❌ Error en la lectura del QR (cámara): " + String(err));
-      }
-    ).catch((e) => {
-      setShowQr(false);
-      alert("No se pudo acceder a la cámara o el permiso fue denegado.");
-    });
-  }
-  return () => {
-    if (scanner.current) {
-      scanner.current.stop().then(() => scanner.current.clear());
-    }
-  };
-  // eslint-disable-next-line
-}, [showQr, machines]);
-
 
   return (
     <div
@@ -178,7 +85,7 @@ export default function MachineSelection({ onSelectMachine }) {
           <div className="title-header">Chatea con Rentaire</div>
         </div>
 
-        {/* QR Button */}
+        {/* QR Button: lo movemos encima del buscador */}
         <div
           className="btn-escanear-qr"
           tabIndex={0}
@@ -205,25 +112,6 @@ export default function MachineSelection({ onSelectMachine }) {
             style={{ marginLeft: 10, width: 35, height: 35, backgroundColor: "#0198f1"}}
           />
         </div>
-
-        {/* Modal de escáner QR */}
-        {showQr && (
-          <div style={{
-            position: "fixed",
-            zIndex: 9999,
-            left: 0, top: 0, width: "100vw", height: "100vh",
-            background: "rgba(0,0,0,0.8)",
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center"
-          }}>
-            <div
-              id="qr-reader"
-              ref={qrRef}
-              style={{ width: 300, height: 300, background: "#000" }}
-            />
-            <button onClick={() => setShowQr(false)} style={{ marginTop: 20, fontSize: 18, padding: "8px 24px", borderRadius: 10 }}>Cerrar</button>
-          </div>
-        )}
 
         {/* Buscador y desplegable */}
         <div className="search-row">
