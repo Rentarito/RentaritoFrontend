@@ -77,11 +77,11 @@ export default function MachineSelection({ onSelectMachine }) {
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         async (decodedText) => {
-          // --- Al leer el QR, llama a la API ---
           setShowQr(false);
           await scanner.current.stop().then(() => scanner.current.clear());
           try {
-            const apiUrl = `https://businesscentral.rentaire.es:10043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
+            // 1. Consultar la API usando el código escaneado
+            const apiUrl = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
             const response = await fetch(apiUrl, {
               method: "GET",
               headers: { "Content-Type": "application/json" }
@@ -91,7 +91,7 @@ export default function MachineSelection({ onSelectMachine }) {
             const result = await response.json();
             const folderName = result?.Result?.trim() ?? "";
 
-            // Busca en la lista local de máquinas
+            // 2. Busca en la lista local de máquinas (coincidencia exacta, insensible a mayúsculas)
             const found = machines.find(m => m.trim().toLowerCase() === folderName.toLowerCase());
 
             if (!folderName || !found) {
