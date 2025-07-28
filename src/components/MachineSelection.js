@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchMachines } from "../helpers/api";
-import "../App.css"; // Asegúrate de tener estilos básicos
+import "../App.css";
+import { Html5Qrcode } from "html5-qrcode";
 
 export default function MachineSelection({ onSelectMachine }) {
   const [machines, setMachines] = useState([]);
@@ -10,6 +11,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
+  const [scanning, setScanning] = useState(false);
 
   const inputRef = useRef();
 
@@ -31,40 +33,90 @@ export default function MachineSelection({ onSelectMachine }) {
     loadMachines();
   }, []);
 
-  // Filtra máquinas por texto
+  // Filtrar máquinas por búsqueda
   useEffect(() => {
     if (input.trim() === "") {
       setFiltered(machines);
     } else {
       setFiltered(
-        machines.filter(m =>
+        machines.filter((m) =>
           m.toLowerCase().includes(input.trim().toLowerCase())
         )
       );
     }
   }, [input, machines]);
 
-  // Cambia icono flecha
   const dropdownIcon = showDropdown
     ? "/assets/ic_arrow_drop_down.svg"
     : "/assets/ic_arrow_right.svg";
 
-  // Handler selección máquina
+  // Selección manual o por QR
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
-    setTimeout(() => onSelectMachine(machine), 300); // Simula navegación
+    setScanning(false);
+    setTimeout(() => onSelectMachine(machine), 300);
   };
 
-  // Simulación de QR (puedes hacer prompt para pegar código manual)
-  const handleQR = () => {
-    const code = window.prompt("Pega el código QR de la máquina:");
-    if (!code) return;
-    // Busca si el QR coincide con el nombre de máquina
-    // Puedes adaptar esto a llamar a una API si tienes lógica QR->nombre
-    const found = machines.find(m => m.toLowerCase().includes(code.toLowerCase()));
-    if (found) handleSelect(found);
-    else alert("QR no reconocido o máquina no encontrada.");
+  // Escanear código QR con cámara
+  const handleQR = async () => {
+    const qrRegionId = "qr-reader";
+    const html5QrCode = new Html5Qrcode(qrRegionId);
+
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      if (!devices || devices.length === 0) {
+        alert("No se detectó ninguna cámara.");
+        return;
+      }
+
+      const cameraId = devices[0].id;
+      setScanning(true);
+
+      html5QrCode.start(
+        cameraId,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        async (decodedText, decodedResult) => {
+          await html5QrCode.stop();
+          document.getElementById(qrRegionId).innerHTML = "";
+          setScanning(false);
+
+          try {
+            const response = await fetch(
+              `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(
+                JSON.stringify({ rentalElement: decodedText })
+              )}`
+            );
+
+            const result = await response.json();
+            const folderName = result.Result?.trim();
+
+            if (!folderName || !machines.includes(folderName)) {
+              alert(
+                "El QR no pertenece a una máquina válida o no hay manuales disponibles."
+              );
+              return;
+            }
+
+            handleSelect(folderName);
+          } catch (err) {
+            console.error("Error al consultar la máquina:", err);
+            alert("Error consultando la máquina.");
+          }
+        },
+        (errorMessage) => {
+          console.warn("Error escaneando QR:", errorMessage);
+        }
+      );
+    } catch (err) {
+      console.error("Error accediendo a la cámara:", err);
+      alert(
+        "No se pudo acceder a la cámara. Verifica que el navegador tiene permisos."
+      );
+    }
   };
 
   return (
@@ -80,12 +132,12 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card">
-        {/* Header */}
+        {/* Encabezado */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
 
-        {/* QR Button: lo movemos encima del buscador */}
+        {/* Botón escanear QR */}
         <div
           className="btn-escanear-qr"
           tabIndex={0}
@@ -109,9 +161,27 @@ export default function MachineSelection({ onSelectMachine }) {
           <img
             src="/assets/qr.png"
             alt="QR"
-            style={{ marginLeft: 10, width: 35, height: 35, backgroundColor: "#0198f1"}}
+            style={{
+              marginLeft: 10,
+              width: 35,
+              height: 35,
+              backgroundColor: "#0198f1",
+            }}
           />
         </div>
+
+        {/* Zona escáner QR */}
+        {scanning && (
+          <div
+            id="qr-reader"
+            style={{
+              width: "100%",
+              maxWidth: 400,
+              margin: "0 auto 20px",
+              borderRadius: 10,
+            }}
+          ></div>
+        )}
 
         {/* Buscador y desplegable */}
         <div className="search-row">
@@ -123,19 +193,27 @@ export default function MachineSelection({ onSelectMachine }) {
               value={input}
               ref={inputRef}
               onFocus={() => setShowDropdown(true)}
-              onChange={e => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value)}
               style={{ minWidth: 0 }}
             />
             <button
               className="icon-button"
-              style={{ marginLeft: 4, background: "none", border: "none", cursor: "pointer" }}
-              onClick={() => setShowDropdown(s => !s)}
+              style={{
+                marginLeft: 4,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              onClick={() => setShowDropdown((s) => !s)}
               tabIndex={-1}
               aria-label="Abrir selector"
             >
-              <img src={dropdownIcon} style={{ width: 28, height: 28 }} alt="Desplegar" />
+              <img
+                src={dropdownIcon}
+                style={{ width: 28, height: 28 }}
+                alt="Desplegar"
+              />
             </button>
-            {/* Dropdown */}
             {showDropdown && (
               <div className="dropdown">
                 {filtered.length === 0 && (
@@ -155,7 +233,7 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
-        {/* Error */}
+        {/* Mensaje de error */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
