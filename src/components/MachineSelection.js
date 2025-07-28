@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchMachines } from "../helpers/api";
-import "../App.css"; // Asegúrate de tener estilos básicos
+import "../App.css";
 
 // Importa la librería QR
 import { Html5Qrcode } from "html5-qrcode";
@@ -76,14 +76,32 @@ export default function MachineSelection({ onSelectMachine }) {
       scanner.current.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
-        (decodedText) => {
-          // Procesar el QR leído
+        async (decodedText) => {
+          // --- Al leer el QR, llama a la API ---
           setShowQr(false);
-          scanner.current.stop().then(() => scanner.current.clear());
-          // Busca si el QR coincide con el nombre de máquina
-          const found = machines.find(m => m.toLowerCase().includes(decodedText.toLowerCase()));
-          if (found) handleSelect(found);
-          else alert("QR no reconocido o máquina no encontrada.");
+          await scanner.current.stop().then(() => scanner.current.clear());
+          try {
+            const apiUrl = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(JSON.stringify({ rentalElement: decodedText }))}`;
+            const response = await fetch(apiUrl, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" }
+            });
+            if (!response.ok) throw new Error("Error consultando API");
+
+            const result = await response.json();
+            const folderName = result?.Result?.trim() ?? "";
+
+            // Busca en la lista local de máquinas
+            const found = machines.find(m => m.trim().toLowerCase() === folderName.toLowerCase());
+
+            if (!folderName || !found) {
+              alert("❌ El QR escaneado no pertenece a ninguna máquina o la máquina no tiene manuales disponibles.");
+            } else {
+              handleSelect(found); // Entra al chat de la máquina
+            }
+          } catch (err) {
+            alert("❌ Error consultando la API del QR");
+          }
         },
         (err) => {
           // Puedes loguear errores si quieres
@@ -99,7 +117,7 @@ export default function MachineSelection({ onSelectMachine }) {
       }
     };
     // eslint-disable-next-line
-  }, [showQr]);
+  }, [showQr, machines]);
 
   return (
     <div
