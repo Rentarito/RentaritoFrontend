@@ -76,7 +76,10 @@ export default function MachineSelection({ onSelectMachine }) {
           return;
         }
 
-        const cameraId = devices[0].id;
+        const backCamera = devices.find((d) =>
+          d.label.toLowerCase().includes("back")
+        );
+        const cameraId = backCamera ? backCamera.id : devices[0].id;
 
         html5QrCode
           .start(
@@ -98,10 +101,15 @@ export default function MachineSelection({ onSelectMachine }) {
                 const result = await response.json();
                 const folderName = result.Result?.trim();
 
-                if (!folderName || !machines.includes(folderName)) {
+                const folderNameLower = folderName.toLowerCase();
+                const match = machines.find(m => m.toLowerCase() === folderNameLower);
+
+                if (!match) {
                   alert("El QR no pertenece a una máquina válida.");
                   return;
                 }
+
+                handleSelect(match);
 
                 handleSelect(folderName);
               } catch (err) {
