@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
-import getSessionId from "../helpers/sessionIdHelper";
 import { fetchMachines } from "../helpers/api";
 import "../App.css";
 import { Html5Qrcode } from "html5-qrcode";
@@ -12,10 +11,10 @@ export default function MachineSelection({ onSelectMachine }) {
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [qrCode, setQrCode] = useState(""); // <--- Aquí se guarda el QR
+  const [qrCode, setQrCode] = useState("");
 
+  const scannerRef = useRef();
   const inputRef = useRef();
-  const scannerRef = useRef(null);
 
   useEffect(() => {
     async function loadMachines() {
@@ -35,6 +34,50 @@ export default function MachineSelection({ onSelectMachine }) {
   }, []);
 
   useEffect(() => {
+    if (!scanning) return;
+    const qrRegionId = "qr-reader";
+    let html5QrCode = new Html5Qrcode(qrRegionId);
+
+    scannerRef.current = html5QrCode;
+
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        const cameraId =
+          devices.find((d) => d.label.toLowerCase().includes("back"))?.id ||
+          devices[0]?.id;
+        if (!cameraId) {
+          alert("No se detectó ninguna cámara.");
+          setScanning(false);
+          return;
+        }
+        html5QrCode
+          .start(
+            cameraId,
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+              setQrCode(decodedText);
+              setScanning(false);
+              html5QrCode.stop().catch(() => {});
+            }
+          )
+          .catch((err) => {
+            setScanning(false);
+            alert("No se pudo iniciar el escáner.");
+          });
+      })
+      .catch(() => {
+        setScanning(false);
+        alert("Permiso de cámara denegado o no disponible.");
+      });
+
+    // Cleanup: para el escáner si sales
+    return () => {
+      html5QrCode.stop().catch(() => {});
+      scannerRef.current = null;
+    };
+  }, [scanning]);
+
+  useEffect(() => {
     if (input.trim() === "") {
       setFiltered(machines);
     } else {
@@ -46,76 +89,12 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }, [input, machines]);
 
-  const dropdownIcon = showDropdown
-    ? "/assets/ic_arrow_drop_down.svg"
-    : "/assets/ic_arrow_right.svg";
-
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
     setScanning(false);
     setTimeout(() => onSelectMachine(machine), 300);
   };
-
-  const handleQR = () => {
-    setScanning(true);
-  };
-
-  useEffect(() => {
-    const qrRegionId = "qr-reader";
-    if (!scanning) return;
-
-    const html5QrCode = new Html5Qrcode(qrRegionId);
-    scannerRef.current = html5QrCode;
-
-    Html5Qrcode.getCameras()
-      .then((devices) => {
-        if (!devices || devices.length === 0) {
-          alert("No se detectó ninguna cámara.");
-          setScanning(false);
-          return;
-        }
-
-        const backCamera = devices.find((d) =>
-          d.label.toLowerCase().includes("back")
-        );
-        const cameraId = backCamera ? backCamera.id : devices[0].id;
-
-        html5QrCode
-          .start(
-            cameraId,
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            async (decodedText) => {
-              setQrCode(decodedText);
-              setScanning(false);
-              try {
-                await html5QrCode.stop();
-              } catch (e) {
-                // No pasa nada si falla
-              }
-              // IMPORTANTE: No toques el innerHTML, deja que React quite el div
-            },
-            (errorMessage) => {
-              // Ignora errores de escaneo continuos
-            }
-          )
-          .catch((err) => {
-            alert("No se pudo iniciar el escáner.");
-            setScanning(false);
-          });
-      })
-      .catch((err) => {
-        alert("Permiso de cámara denegado o no disponible.");
-        setScanning(false);
-      });
-
-    // Cleanup robusto: siempre para el escáner si cambia el estado
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-      }
-    };
-  }, [scanning]);
 
   return (
     <div
@@ -138,7 +117,7 @@ export default function MachineSelection({ onSelectMachine }) {
         <div
           className="btn-escanear-qr"
           tabIndex={0}
-          onClick={handleQR}
+          onClick={() => setScanning(true)}
           style={{
             marginTop: "15vw",
             display: "flex",
@@ -167,7 +146,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Campo QR SOLO LECTURA */}
+        {/* Campo de texto con QR */}
         <div className="autocomplete-container" style={{ marginTop: "5vw" }}>
           <input
             type="text"
@@ -183,7 +162,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Lector QR */}
+        {/* Lector QR solo si está escaneando */}
         {scanning && (
           <div
             id="qr-reader"
@@ -196,7 +175,7 @@ export default function MachineSelection({ onSelectMachine }) {
           ></div>
         )}
 
-        {/* Buscador */}
+        {/* Buscador manual */}
         <div className="search-row">
           <div className="autocomplete-container">
             <input
@@ -222,7 +201,11 @@ export default function MachineSelection({ onSelectMachine }) {
               aria-label="Abrir selector"
             >
               <img
-                src={dropdownIcon}
+                src={
+                  showDropdown
+                    ? "/assets/ic_arrow_drop_down.svg"
+                    : "/assets/ic_arrow_right.svg"
+                }
                 style={{ width: 28, height: 28 }}
                 alt="Desplegar"
               />
@@ -230,7 +213,9 @@ export default function MachineSelection({ onSelectMachine }) {
             {showDropdown && (
               <div className="dropdown">
                 {filtered.length === 0 && (
-                  <div className="dropdown-item disabled">No hay resultados</div>
+                  <div className="dropdown-item disabled">
+                    No hay resultados
+                  </div>
                 )}
                 {filtered.map((machine, idx) => (
                   <div
@@ -246,6 +231,7 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
+        {/* Error */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
