@@ -13,6 +13,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [scanning, setScanning] = useState(false);
   const [qrCodeRaw, setQrCodeRaw] = useState("");
   const [machineNameFromApi, setMachineNameFromApi] = useState("");
+  const [notFound, setNotFound] = useState(false);
 
   const inputRef = useRef();
 
@@ -34,7 +35,6 @@ export default function MachineSelection({ onSelectMachine }) {
     loadMachines();
   }, []);
 
-  // Filtrar al escribir
   useEffect(() => {
     if (input.trim() === "") {
       setFiltered(machines);
@@ -62,6 +62,7 @@ export default function MachineSelection({ onSelectMachine }) {
     setScanning(true);
     setQrCodeRaw("");
     setMachineNameFromApi("");
+    setNotFound(false);
   };
 
   // Escáner QR
@@ -90,9 +91,9 @@ export default function MachineSelection({ onSelectMachine }) {
             { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
               setQrCodeRaw(decodedText);
+              setScanning(false);
               await html5QrCode.stop();
               document.getElementById(qrRegionId).innerHTML = "";
-              setScanning(false);
 
               try {
                 const response = await fetch(
@@ -108,14 +109,17 @@ export default function MachineSelection({ onSelectMachine }) {
                 const folderName = valueNode?.textContent?.trim();
 
                 if (!folderName) {
-                  alert("⚠️ La API no devolvió una máquina válida.");
+                  setMachineNameFromApi("");
+                  setNotFound(true);
                   return;
                 }
 
                 setMachineNameFromApi(folderName);
+                setNotFound(false);
               } catch (err) {
                 console.error("❌ Error al consultar la API:", err);
-                alert("Error al consultar la máquina.");
+                setMachineNameFromApi("");
+                setNotFound(true);
               }
             },
             (errorMessage) => {
@@ -157,11 +161,7 @@ export default function MachineSelection({ onSelectMachine }) {
         </div>
 
         {/* Botón de escanear QR */}
-        <div
-          className="btn-escanear-qr"
-          tabIndex={0}
-          onClick={handleQR}
-        >
+        <div className="btn-escanear-qr" tabIndex={0} onClick={handleQR}>
           Escanear QR de la máquina
           <img
             src="/assets/qr.png"
@@ -175,7 +175,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Campo: código QR escaneado */}
+        {/* Resultado del QR */}
         {qrCodeRaw && (
           <input
             type="text"
@@ -198,7 +198,6 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         )}
 
-        {/* Campo: nombre de máquina desde la API */}
         {machineNameFromApi && (
           <input
             type="text"
@@ -221,7 +220,20 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         )}
 
-        {/* Lector QR */}
+        {notFound && (
+          <div
+            style={{
+              marginTop: "2vw",
+              textAlign: "center",
+              color: "red",
+              fontSize: "4vw",
+            }}
+          >
+            ❌ No se ha encontrado una máquina válida
+          </div>
+        )}
+
+        {/* Lector QR activo */}
         {scanning && (
           <div
             id="qr-reader"
