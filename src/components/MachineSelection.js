@@ -35,17 +35,14 @@ export default function MachineSelection({ onSelectMachine }) {
     if (!scanning) return;
 
     let html5QrCode = null;
-    let stopped = false;
+    let running = false;
 
-    // Esperar a que el div esté realmente montado en el DOM
     const tryStartScanner = () => {
       if (!document.getElementById("qr-reader")) {
-        console.log("⌛ Esperando a que el div qr-reader esté en el DOM...");
-        setTimeout(tryStartScanner, 100); // Espera y vuelve a intentar
+        setTimeout(tryStartScanner, 100);
         return;
       }
 
-      console.log("✅ Div qr-reader listo. Iniciando escáner...");
       html5QrCode = new Html5Qrcode("qr-reader", { verbose: false });
 
       Html5Qrcode.getCameras()
@@ -56,7 +53,6 @@ export default function MachineSelection({ onSelectMachine }) {
           if (!cameraId) {
             alert("No se detectó ninguna cámara.");
             setScanning(false);
-            stopped = true;
             return;
           }
           html5QrCode
@@ -64,39 +60,33 @@ export default function MachineSelection({ onSelectMachine }) {
               cameraId,
               { fps: 10, qrbox: { width: 250, height: 250 } },
               async (decodedText) => {
-                if (stopped) return;
                 setQrCode(decodedText);
-                stopped = true;
-                try {
-                  await html5QrCode.stop();
-                } catch (e) {}
-                setScanning(false);
+                running = true;
+                setScanning(false); // Esto desmonta el div y hace cleanup
               }
             )
+            .then(() => { running = true; })
             .catch((err) => {
               setScanning(false);
-              stopped = true;
               alert("No se pudo iniciar el escáner.");
             });
         })
         .catch(() => {
           setScanning(false);
-          stopped = true;
           alert("Permiso de cámara denegado o no disponible.");
         });
     };
 
-    // Inicia el scanner solo cuando el div esté seguro
     setTimeout(tryStartScanner, 100);
 
-    // Cleanup SIEMPRE: parar el escáner al desmontar
     return () => {
-      if (html5QrCode && !stopped) {
+      if (html5QrCode && running) {
         html5QrCode.stop().catch(() => {});
-        stopped = true;
+        running = false;
       }
     };
   }, [scanning]);
+
 
   useEffect(() => {
     if (input.trim() === "") {
