@@ -52,10 +52,9 @@ export default function MachineSelection({ onSelectMachine }) {
   };
 
   // ---- QR modal logic ----
-  useEffect(() => {
+   useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
-      // Si ocultas el modal, limpia el escáner
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -64,7 +63,6 @@ export default function MachineSelection({ onSelectMachine }) {
       return;
     }
 
-    // Esperar a que el div esté en el DOM antes de crear el escáner
     setTimeout(() => {
       const html5QrCode = new Html5Qrcode(regionId, { verbose: false });
       qrCodeScannerRef.current = html5QrCode;
@@ -84,8 +82,28 @@ export default function MachineSelection({ onSelectMachine }) {
             .start(
               backCamera.id,
               { fps: 10, qrbox: { width: 250, height: 250 } },
-              (decodedText) => {
-                setQrCode(decodedText);
+              async (decodedText) => {
+                // ====== AQUÍ CAMBIA ======
+                // Llama a la API y pon el nombre de la máquina en el campo
+                try {
+                  // Construir la URL
+                  const param = encodeURIComponent(JSON.stringify({ rentalElement: decodedText }));
+                  const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${param}`;
+                  const response = await fetch(url);
+                  const xml = await response.text();
+
+                  // Parsear el XML manualmente para sacar el <Value>...</Value>
+                  const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
+                  let nombreMaquina = "";
+                  if (match && match[1]) {
+                    nombreMaquina = match[1].trim();
+                  } else {
+                    nombreMaquina = "No encontrada";
+                  }
+                  setQrCode(nombreMaquina);
+                } catch (err) {
+                  setQrCode("Error consultando máquina");
+                }
                 setShowQRModal(false);
                 html5QrCode
                   .stop()
@@ -93,9 +111,7 @@ export default function MachineSelection({ onSelectMachine }) {
                   .catch(() => {});
                 qrCodeScannerRef.current = null;
               },
-              (errorMessage) => {
-                // Solo loggear, no mostrar cada error menor
-              }
+              () => {}
             )
             .catch((err) => {
               setError("No se pudo iniciar el escáner.");
