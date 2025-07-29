@@ -51,39 +51,44 @@ export default function MachineSelection({ onSelectMachine }) {
     setTimeout(() => onSelectMachine(machine), 300);
   };
 
-  // --- FUNCIÓN para consultar la API con el QR ---
+  // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
   async function obtenerNombreMaquina(decodedText) {
-  try {
-    // Limpiar bien (quita saltos de línea, espacios, etc.)
-    const codigo = decodedText.replace(/\s/g, "");
-    const jsonParam = JSON.stringify({ rentalElement: codigo });
-    const urlParam = encodeURIComponent(jsonParam);
+    try {
+      const codigo = decodedText.trim();
+      console.log("[DEBUG] Código QR leído:", JSON.stringify(codigo));
 
-    const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
-    console.log("URL final:", url);
+      const jsonParam = JSON.stringify({ rentalElement: codigo });
+      const urlParam = encodeURIComponent(jsonParam);
+      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
 
-    const response = await fetch(url);
-    const xml = await response.text();
-    console.log("XML:", xml);
+      console.log("[DEBUG] URL generada:", url);
 
-    const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
-    let nombreMaquina = "";
-    if (match && match[1]) {
-      nombreMaquina = match[1].trim();
-      if (!nombreMaquina) nombreMaquina = "No encontrada";
-    } else {
-      nombreMaquina = "No encontrada";
+      const response = await fetch(url);
+      const xml = await response.text();
+
+      console.log("[DEBUG] XML recibido:", xml);
+
+      const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
+      if (match && match[1]) {
+        const nombreMaquina = match[1].trim();
+        console.log("[DEBUG] Nombre de máquina encontrado:", nombreMaquina);
+        return nombreMaquina;
+      } else {
+        console.log("[DEBUG] No se encontró el nombre de la máquina en el XML.");
+        return "No encontrada";
+      }
+    } catch (err) {
+      console.error("[ERROR] Al consultar la máquina:", err);
+      return "Error consultando máquina";
     }
-    return nombreMaquina;
-  } catch (err) {
-    return "Error consultando máquina";
   }
-}
+  // ------------------------------------------------------------------------
 
   // ---- QR modal logic ----
   useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
+      // Si ocultas el modal, limpia el escáner
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -111,18 +116,21 @@ export default function MachineSelection({ onSelectMachine }) {
             .start(
               backCamera.id,
               { fps: 10, qrbox: { width: 250, height: 250 } },
-              async (decodedText) => {
-                // Aquí llamamos a la función y actualizamos el campo
-                const nombreMaquina = await obtenerNombreMaquina(decodedText);
-                setQrCode(nombreMaquina);
-                setShowQRModal(false);
-                html5QrCode
-                  .stop()
-                  .then(() => html5QrCode.clear())
-                  .catch(() => {});
-                qrCodeScannerRef.current = null;
+              (decodedText) => {
+                // AQUÍ: Llamar a la función que consulta la API y pone el nombre
+                obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
+                  setQrCode(nombreMaquina);
+                  setShowQRModal(false);
+                  html5QrCode
+                    .stop()
+                    .then(() => html5QrCode.clear())
+                    .catch(() => {});
+                  qrCodeScannerRef.current = null;
+                });
               },
-              () => {}
+              (errorMessage) => {
+                // Puedes loggear si quieres
+              }
             )
             .catch((err) => {
               setError("No se pudo iniciar el escáner.");
@@ -137,6 +145,7 @@ export default function MachineSelection({ onSelectMachine }) {
         });
     }, 300);
 
+    // Limpieza extra si el componente se desmonta
     return () => {
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
