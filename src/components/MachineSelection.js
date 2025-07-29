@@ -92,8 +92,14 @@ export default function MachineSelection({ onSelectMachine }) {
             async (decodedText) => {
               setQrCodeRaw(decodedText);
               setScanning(false);
-              await html5QrCode.stop();
-              document.getElementById(qrRegionId).innerHTML = "";
+              await html5QrCode.stop().then(() => {
+                console.log("✅ Escáner detenido");
+                document.getElementById(qrRegionId).innerHTML = "";
+                setScanning(false);
+              }).catch((err) => {
+                console.warn("⚠️ Error deteniendo escáner:", err);
+                setScanning(false); // Asegura que volvamos al estado normal
+              });
 
               try {
                 const response = await fetch(
