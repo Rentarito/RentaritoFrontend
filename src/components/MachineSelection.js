@@ -53,26 +53,32 @@ export default function MachineSelection({ onSelectMachine }) {
 
   // --- FUNCIÓN para consultar la API con el QR ---
   async function obtenerNombreMaquina(decodedText) {
-    try {
-      const codigo = decodedText.trim();
-      const jsonParam = JSON.stringify({ rentalElement: codigo });
-      const urlParam = encodeURIComponent(jsonParam);
-      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement="${urlParam}"`;
-      const response = await fetch(url);
-      const xml = await response.text();
-      const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
-      let nombreMaquina = "";
-      if (match && match[1]) {
-        nombreMaquina = match[1].trim();
-        if (!nombreMaquina) nombreMaquina = "No encontrada";
-      } else {
-        nombreMaquina = "No encontrada";
-      }
-      return nombreMaquina;
-    } catch (err) {
-      return "Error consultando máquina";
+  try {
+    // Limpiar bien (quita saltos de línea, espacios, etc.)
+    const codigo = decodedText.replace(/\s/g, "");
+    const jsonParam = JSON.stringify({ rentalElement: codigo });
+    const urlParam = encodeURIComponent(jsonParam);
+
+    const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
+    console.log("URL final:", url);
+
+    const response = await fetch(url);
+    const xml = await response.text();
+    console.log("XML:", xml);
+
+    const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
+    let nombreMaquina = "";
+    if (match && match[1]) {
+      nombreMaquina = match[1].trim();
+      if (!nombreMaquina) nombreMaquina = "No encontrada";
+    } else {
+      nombreMaquina = "No encontrada";
     }
+    return nombreMaquina;
+  } catch (err) {
+    return "Error consultando máquina";
   }
+}
 
   // ---- QR modal logic ----
   useEffect(() => {
