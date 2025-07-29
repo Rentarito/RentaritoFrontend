@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
 import { fetchMachines } from "../helpers/api";
 import "../App.css";
-import { Html5Qrcode } from "html5-qrcode";
+import { BrowserQRCodeReader } from "@zxing/browser";
 
 export default function MachineSelection({ onSelectMachine }) {
   const [machines, setMachines] = useState([]);
@@ -13,10 +13,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [scanning, setScanning] = useState(false);
   const [qrCode, setQrCode] = useState("");
   const inputRef = useRef();
-
-  // Guardamos el escáner y su estado
-  const qrScannerRef = useRef(null);
-  const runningRef = useRef(false);
+  const videoRef = useRef();
 
   useEffect(() => {
     async function loadMachines() {
@@ -35,75 +32,31 @@ export default function MachineSelection({ onSelectMachine }) {
     loadMachines();
   }, []);
 
+  // --- Scanner ZXing
   useEffect(() => {
+    let codeReader;
+    let abort = false;
     if (!scanning) return;
 
-    let cancelled = false;
-    let html5QrCode = null;
-
-    const tryStartScanner = () => {
-      if (!document.getElementById("qr-reader")) {
-        setTimeout(tryStartScanner, 100);
-        return;
-      }
-
-      html5QrCode = new Html5Qrcode("qr-reader", { verbose: false });
-      qrScannerRef.current = html5QrCode;
-
-      Html5Qrcode.getCameras()
-        .then((devices) => {
-          const cameraId =
-            devices.find((d) => d.label.toLowerCase().includes("back"))?.id ||
-            devices[0]?.id;
-          if (!cameraId) {
-            alert("No se detectó ninguna cámara.");
-            setScanning(false);
-            return;
-          }
-          html5QrCode
-            .start(
-              cameraId,
-              { fps: 10, qrbox: { width: 250, height: 250 } },
-              (decodedText) => {
-                if (cancelled) return;
-                setQrCode(decodedText);
-                setScanning(false);
-              }
-            )
-            .then(() => { runningRef.current = true; })
-            .catch(() => {
-              setScanning(false);
-              alert("No se pudo iniciar el escáner.");
-            });
-        })
-        .catch(() => {
+    codeReader = new BrowserQRCodeReader();
+    codeReader
+      .decodeOnceFromVideoDevice(undefined, videoRef.current)
+      .then((result) => {
+        if (!abort) {
+          setQrCode(result.text);
           setScanning(false);
-          alert("Permiso de cámara denegado o no disponible.");
-        });
-    };
-
-    setTimeout(tryStartScanner, 100);
-
-    // --- LIMPIEZA ROBUSTA ---
-    return () => {
-      cancelled = true;
-      const scanner = qrScannerRef.current;
-      // try/catch siempre: nunca fallará el cleanup
-      if (scanner && runningRef.current) {
-        try {
-          scanner.stop()
-            .then(() => {
-              // Limpia el div si existe, por si queda "atascado"
-              const qrDiv = document.getElementById("qr-reader");
-              if (qrDiv) qrDiv.innerHTML = "";
-            })
-            .catch(() => { });
-        } catch (e) {
-          // Nunca lances error aquí
         }
-        runningRef.current = false;
-        qrScannerRef.current = null;
-      }
+      })
+      .catch((err) => {
+        if (!abort) {
+          alert("No se pudo escanear: " + err.message);
+          setScanning(false);
+        }
+      });
+
+    return () => {
+      abort = true;
+      if (codeReader) codeReader.reset();
     };
   }, [scanning]);
 
@@ -195,15 +148,29 @@ export default function MachineSelection({ onSelectMachine }) {
         {/* Lector QR solo si está escaneando */}
         {scanning && (
           <div
-            id="qr-reader"
             style={{
               width: "100%",
               maxWidth: 400,
               margin: "0 auto 20px",
               borderRadius: 10,
               background: "#222",
+              display: "flex",
+              justifyContent: "center",
             }}
-          ></div>
+          >
+            <video
+              ref={videoRef}
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                borderRadius: 10,
+                background: "#222",
+              }}
+              autoPlay
+              playsInline
+              muted
+            />
+          </div>
         )}
 
         {/* Buscador manual */}
