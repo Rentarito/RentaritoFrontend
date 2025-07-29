@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
 import { fetchMachines } from "../helpers/api";
 import "../App.css";
-import { Html5Qrcode } from "html5-qrcode";
+import { BrowserQRCodeReader } from "@zxing/browser";
 
 export default function MachineSelection({ onSelectMachine }) {
   const [machines, setMachines] = useState([]);
@@ -10,12 +10,14 @@ export default function MachineSelection({ onSelectMachine }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
+  const [scanning, setScanning] = useState(false);
   const [qrCode, setQrCode] = useState("");
-  const [showQRModal, setShowQRModal] = useState(false);
-
-  const qrCodeScannerRef = useRef(null);
+  const videoRef = useRef();
+  const readerRef = useRef();
+  const cleanupTimeout = useRef();
   const inputRef = useRef();
 
+  // Cargar lista de máquinas solo al inicio
   useEffect(() => {
     async function loadMachines() {
       try {
@@ -33,6 +35,58 @@ export default function MachineSelection({ onSelectMachine }) {
     loadMachines();
   }, []);
 
+  // Arranca ZXing solo si scanning=true
+  useEffect(() => {
+    if (!scanning) return;
+
+    setError(null);
+    let cancelled = false;
+    let codeReader = new BrowserQRCodeReader();
+    readerRef.current = codeReader;
+
+    codeReader
+      .decodeOnceFromVideoDevice(undefined, videoRef.current)
+      .then((result) => {
+        if (cancelled) return;
+        setQrCode(result.text);
+        setScanning(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError("No se pudo escanear: " + err.message);
+        setScanning(false);
+      });
+
+    // Cleanup robusto al desmontar
+    return () => {
+      cancelled = true;
+      if (codeReader) {
+        try {
+          codeReader.reset();
+        } catch (e) {}
+      }
+      // Extra: limpiar el stream del video tras un retardo para evitar errores en algunos navegadores
+      cleanupTimeout.current = setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = null;
+      }, 300);
+    };
+  }, [scanning]);
+
+  // Cleanup global si desmonta el componente
+  useEffect(() => {
+    return () => {
+      if (readerRef.current) {
+        try {
+          readerRef.current.reset();
+        } catch (e) {}
+      }
+      if (cleanupTimeout.current) {
+        clearTimeout(cleanupTimeout.current);
+      }
+    };
+  }, []);
+
+  // Filtro del buscador de máquinas
   useEffect(() => {
     if (input.trim() === "") {
       setFiltered(machines);
@@ -48,78 +102,9 @@ export default function MachineSelection({ onSelectMachine }) {
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
+    setScanning(false);
     setTimeout(() => onSelectMachine(machine), 300);
   };
-
-  // ---- QR modal logic ----
-  useEffect(() => {
-    const regionId = "qr-modal-reader";
-    if (!showQRModal) {
-      // Si ocultas el modal, limpia el escáner
-      if (qrCodeScannerRef.current) {
-        qrCodeScannerRef.current.stop().catch(() => {});
-        qrCodeScannerRef.current.clear().catch(() => {});
-        qrCodeScannerRef.current = null;
-      }
-      return;
-    }
-
-    // Esperar a que el div esté en el DOM antes de crear el escáner
-    setTimeout(() => {
-      const html5QrCode = new Html5Qrcode(regionId, { verbose: false });
-      qrCodeScannerRef.current = html5QrCode;
-
-      Html5Qrcode.getCameras()
-        .then((devices) => {
-          const backCamera =
-            devices.find((d) =>
-              d.label.toLowerCase().includes("back")
-            ) || devices[0];
-          if (!backCamera) {
-            setError("No se detectó ninguna cámara.");
-            setShowQRModal(false);
-            return;
-          }
-          html5QrCode
-            .start(
-              backCamera.id,
-              { fps: 10, qrbox: { width: 250, height: 250 } },
-              (decodedText) => {
-                setQrCode(decodedText);
-                setShowQRModal(false);
-                html5QrCode
-                  .stop()
-                  .then(() => html5QrCode.clear())
-                  .catch(() => {});
-                qrCodeScannerRef.current = null;
-              },
-              (errorMessage) => {
-                // Solo loggear, no mostrar cada error menor
-                //console.log("QR error: ", errorMessage);
-              }
-            )
-            .catch((err) => {
-              setError("No se pudo iniciar el escáner.");
-              setShowQRModal(false);
-              html5QrCode.clear().catch(() => {});
-              qrCodeScannerRef.current = null;
-            });
-        })
-        .catch(() => {
-          setError("Permiso de cámara denegado o no disponible.");
-          setShowQRModal(false);
-        });
-    }, 300);
-
-    // Limpieza extra si el componente se desmonta
-    return () => {
-      if (qrCodeScannerRef.current) {
-        qrCodeScannerRef.current.stop().catch(() => {});
-        qrCodeScannerRef.current.clear().catch(() => {});
-        qrCodeScannerRef.current = null;
-      }
-    };
-  }, [showQRModal]);
 
   return (
     <div
@@ -142,7 +127,7 @@ export default function MachineSelection({ onSelectMachine }) {
         <div
           className="btn-escanear-qr"
           tabIndex={0}
-          onClick={() => setShowQRModal(true)}
+          onClick={() => setScanning(true)}
           style={{
             marginTop: "15vw",
             display: "flex",
@@ -192,64 +177,53 @@ export default function MachineSelection({ onSelectMachine }) {
           <div style={{ color: "red", marginTop: 16 }}>{error}</div>
         )}
 
-        {/* --- MODAL QR --- */}
-        {showQRModal && (
+        {/* Lector QR solo si está escaneando */}
+        {scanning && (
           <div
             style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100vw",
-              height: "100vh",
-              background: "rgba(0,0,0,0.93)",
-              zIndex: 9999,
+              width: "100%",
+              maxWidth: 400,
+              margin: "0 auto 20px",
+              borderRadius: 10,
+              background: "#222",
               display: "flex",
-              alignItems: "center",
               justifyContent: "center",
+              position: "relative"
             }}
           >
-            <div
+            {/* Botón cerrar */}
+            <button
               style={{
-                background: "#fff",
-                borderRadius: 18,
-                padding: 24,
-                position: "relative",
-                boxShadow: "0 6px 36px #111a",
-                maxWidth: 400,
-                width: "94vw",
+                position: "absolute",
+                top: 8,
+                right: 14,
+                background: "rgba(0,0,0,0.25)",
+                border: "none",
+                color: "#fff",
+                fontSize: 32,
+                borderRadius: 24,
+                width: 40,
+                height: 40,
+                zIndex: 9999,
+                cursor: "pointer"
               }}
+              onClick={() => setScanning(false)}
+              aria-label="Cerrar escáner"
             >
-              <div style={{ textAlign: "right" }}>
-                <button
-                  onClick={() => setShowQRModal(false)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    fontSize: 24,
-                    color: "#0198f1",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                  }}
-                  aria-label="Cerrar escáner"
-                >
-                  ×
-                </button>
-              </div>
-              <div
-                id="qr-modal-reader"
-                style={{
-                  width: "100%",
-                  height: 320,
-                  maxWidth: 360,
-                  margin: "0 auto",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                }}
-              />
-              <div style={{ color: "#0198f1", marginTop: 12, textAlign: "center", fontWeight: "bold" }}>
-                Apunta con la cámara al QR
-              </div>
-            </div>
+              ×
+            </button>
+            <video
+              ref={videoRef}
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                borderRadius: 10,
+                background: "#222",
+              }}
+              autoPlay
+              playsInline
+              muted
+            />
           </div>
         )}
 
