@@ -88,7 +88,7 @@ export default function MachineSelection({ onSelectMachine }) {
                 try {
                   // Construir la URL
                   const param = encodeURIComponent(JSON.stringify({ rentalElement: decodedText }));
-                  const url = `https://businesscentral.rentaire.es:10043/api/route/GetRentalElementFleetCode?p_RentalElement=%7B%22rentalElement%22:%22${param}%22%7D`;
+                  const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=%7B%22rentalElement%22:%22${param}%22%7D`;
                   const response = await fetch(url);
                   const xml = await response.text();
 
