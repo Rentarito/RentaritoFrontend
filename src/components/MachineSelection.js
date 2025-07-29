@@ -53,35 +53,42 @@ export default function MachineSelection({ onSelectMachine }) {
 
   // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
   async function obtenerNombreMaquina(decodedText) {
+  try {
+    const codigo = decodedText.trim();
+    console.log("[DEBUG] Código QR leído:", JSON.stringify(codigo));
+
+    const jsonParam = JSON.stringify({ rentalElement: codigo });
+    const urlParam = encodeURIComponent(jsonParam);
+    const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
+
+    console.log("[DEBUG] URL generada:", url);
+
+    const response = await fetch(url);
+    const text = await response.text();
+    console.log("[DEBUG] Respuesta recibida:", text);
+
+    // Intenta parsear como JSON
+    let json = {};
     try {
-      const codigo = decodedText.trim();
-      console.log("[DEBUG] Código QR leído:", JSON.stringify(codigo));
-
-      const jsonParam = JSON.stringify({ rentalElement: codigo });
-      const urlParam = encodeURIComponent(jsonParam);
-      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
-
-      console.log("[DEBUG] URL generada:", url);
-
-      const response = await fetch(url);
-      const xml = await response.text();
-
-      console.log("[DEBUG] XML recibido:", xml);
-
-      const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
-      if (match && match[1]) {
-        const nombreMaquina = match[1].trim();
-        console.log("[DEBUG] Nombre de máquina encontrado:", nombreMaquina);
-        return nombreMaquina;
-      } else {
-        console.log("[DEBUG] No se encontró el nombre de la máquina en el XML.");
-        return "No encontrada";
-      }
-    } catch (err) {
-      console.error("[ERROR] Al consultar la máquina:", err);
-      return "Error consultando máquina";
+      json = JSON.parse(text);
+    } catch (e) {
+      console.log("[DEBUG] No es JSON válido");
+      return "No encontrada";
     }
+
+    if (json.Result) {
+      console.log("[DEBUG] Nombre de máquina encontrado:", json.Result);
+      return json.Result;
+    } else {
+      console.log("[DEBUG] No se encontró el nombre de la máquina en el JSON.");
+      return "No encontrada";
+    }
+  } catch (err) {
+    console.error("[ERROR] Al consultar la máquina:", err);
+    return "Error consultando máquina";
   }
+}
+
   // ------------------------------------------------------------------------
 
   // ---- QR modal logic ----
