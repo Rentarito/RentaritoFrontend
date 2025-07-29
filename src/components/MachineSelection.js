@@ -57,7 +57,7 @@ export default function MachineSelection({ onSelectMachine }) {
       const codigo = decodedText.trim();
       const jsonParam = JSON.stringify({ rentalElement: codigo });
       const urlParam = encodeURIComponent(jsonParam);
-      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
+      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement="${urlParam}"`;
       const response = await fetch(url);
       const xml = await response.text();
       const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
