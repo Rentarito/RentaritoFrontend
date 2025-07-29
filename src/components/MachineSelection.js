@@ -51,8 +51,31 @@ export default function MachineSelection({ onSelectMachine }) {
     setTimeout(() => onSelectMachine(machine), 300);
   };
 
+  // --- FUNCIÓN para consultar la API con el QR ---
+  async function obtenerNombreMaquina(decodedText) {
+    try {
+      const codigo = decodedText.trim();
+      const jsonParam = JSON.stringify({ rentalElement: codigo });
+      const urlParam = encodeURIComponent(jsonParam);
+      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
+      const response = await fetch(url);
+      const xml = await response.text();
+      const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
+      let nombreMaquina = "";
+      if (match && match[1]) {
+        nombreMaquina = match[1].trim();
+        if (!nombreMaquina) nombreMaquina = "No encontrada";
+      } else {
+        nombreMaquina = "No encontrada";
+      }
+      return nombreMaquina;
+    } catch (err) {
+      return "Error consultando máquina";
+    }
+  }
+
   // ---- QR modal logic ----
-   useEffect(() => {
+  useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
       if (qrCodeScannerRef.current) {
@@ -83,27 +106,9 @@ export default function MachineSelection({ onSelectMachine }) {
               backCamera.id,
               { fps: 10, qrbox: { width: 250, height: 250 } },
               async (decodedText) => {
-                // ====== AQUÍ CAMBIA ======
-                // Llama a la API y pon el nombre de la máquina en el campo
-                try {
-                  // Construir la URL
-                  const param = encodeURIComponent(JSON.stringify({ rentalElement: decodedText }));
-                  const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=%7B%22rentalElement%22:%22${param}%22%7D`;
-                  const response = await fetch(url);
-                  const xml = await response.text();
-
-                  // Parsear el XML manualmente para sacar el <Value>...</Value>
-                  const match = xml.match(/<Value[^>]*>(.*?)<\/Value>/);
-                  let nombreMaquina = "";
-                  if (match && match[1]) {
-                    nombreMaquina = match[1].trim();
-                  } else {
-                    nombreMaquina = "No encontrada";
-                  }
-                  setQrCode(nombreMaquina);
-                } catch (err) {
-                  setQrCode("Error consultando máquina");
-                }
+                // Aquí llamamos a la función y actualizamos el campo
+                const nombreMaquina = await obtenerNombreMaquina(decodedText);
+                setQrCode(nombreMaquina);
                 setShowQRModal(false);
                 html5QrCode
                   .stop()
@@ -126,7 +131,6 @@ export default function MachineSelection({ onSelectMachine }) {
         });
     }, 300);
 
-    // Limpieza extra si el componente se desmonta
     return () => {
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
@@ -135,24 +139,6 @@ export default function MachineSelection({ onSelectMachine }) {
       }
     };
   }, [showQRModal]);
-
-  // --- handler para cerrar bien el modal QR ---
-  const handleCloseQRModal = () => {
-    if (qrCodeScannerRef.current) {
-      qrCodeScannerRef.current
-        .stop()
-        .catch(() => {})
-        .then(() => {
-          return qrCodeScannerRef.current.clear().catch(() => {});
-        })
-        .finally(() => {
-          qrCodeScannerRef.current = null;
-          setShowQRModal(false);
-        });
-    } else {
-      setShowQRModal(false);
-    }
-  };
 
   return (
     <div
@@ -211,7 +197,7 @@ export default function MachineSelection({ onSelectMachine }) {
             className="autocomplete-input"
             value={qrCode}
             readOnly
-            placeholder="Aquí aparecerá el código QR escaneado"
+            placeholder="Aquí aparecerá el nombre de la máquina"
             style={{
               backgroundColor: "#f4f4f4",
               color: "#0198f1",
@@ -254,7 +240,14 @@ export default function MachineSelection({ onSelectMachine }) {
             >
               <div style={{ textAlign: "right" }}>
                 <button
-                  onClick={handleCloseQRModal}
+                  onClick={() => {
+                    if (qrCodeScannerRef.current) {
+                      qrCodeScannerRef.current.stop().catch(() => {});
+                      qrCodeScannerRef.current.clear().catch(() => {});
+                      qrCodeScannerRef.current = null;
+                    }
+                    setShowQRModal(false);
+                  }}
                   style={{
                     background: "none",
                     border: "none",
