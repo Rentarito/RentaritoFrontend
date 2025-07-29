@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
+import getSessionId from "../helpers/sessionIdHelper";
 import { fetchMachines } from "../helpers/api";
 import "../App.css";
 import { Html5Qrcode } from "html5-qrcode";
@@ -11,13 +12,10 @@ export default function MachineSelection({ onSelectMachine }) {
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [qrCodeRaw, setQrCodeRaw] = useState("");
-  const [machineNameFromApi, setMachineNameFromApi] = useState("");
-  const [notFound, setNotFound] = useState(false);
+  const [qrCode, setQrCode] = useState(""); // <-- Estado para el código QR
 
   const inputRef = useRef();
 
-  // Cargar lista de máquinas
   useEffect(() => {
     async function loadMachines() {
       try {
@@ -60,12 +58,9 @@ export default function MachineSelection({ onSelectMachine }) {
 
   const handleQR = () => {
     setScanning(true);
-    setQrCodeRaw("");
-    setMachineNameFromApi("");
-    setNotFound(false);
   };
 
-  // Escáner QR
+  // Escáner QR: solo guardar el código y cerrar el escáner
   useEffect(() => {
     const qrRegionId = "qr-reader";
     if (!scanning) return;
@@ -90,43 +85,12 @@ export default function MachineSelection({ onSelectMachine }) {
             cameraId,
             { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
-              setQrCodeRaw(decodedText);
+              setQrCode(decodedText); // Guarda el código QR leído
               setScanning(false);
-              await html5QrCode.stop().then(() => {
-                console.log("✅ Escáner detenido");
-                document.getElementById(qrRegionId).innerHTML = "";
-                setScanning(false);
-              }).catch((err) => {
-                console.warn("⚠️ Error deteniendo escáner:", err);
-                setScanning(false); // Asegura que volvamos al estado normal
-              });
-
-              try {
-                const response = await fetch(
-                  `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${encodeURIComponent(
-                    JSON.stringify({ rentalElement: decodedText })
-                  )}`
-                );
-
-                const xmlText = await response.text();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(xmlText, "application/xml");
-                const valueNode = xml.querySelector("Value");
-                const folderName = valueNode?.textContent?.trim();
-
-                if (!folderName) {
-                  setMachineNameFromApi("");
-                  setNotFound(true);
-                  return;
-                }
-
-                setMachineNameFromApi(folderName);
-                setNotFound(false);
-              } catch (err) {
-                console.error("❌ Error al consultar la API:", err);
-                setMachineNameFromApi("");
-                setNotFound(true);
-              }
+              await html5QrCode.stop();
+              // Limpia el div del escáner por si acaso
+              const el = document.getElementById(qrRegionId);
+              if (el) el.innerHTML = "";
             },
             (errorMessage) => {
               console.warn("⚠️ Error escaneando:", errorMessage);
@@ -162,12 +126,31 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card">
+        {/* Encabezado */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
 
-        {/* Botón de escanear QR */}
-        <div className="btn-escanear-qr" tabIndex={0} onClick={handleQR}>
+        {/* Botón QR */}
+        <div
+          className="btn-escanear-qr"
+          tabIndex={0}
+          onClick={handleQR}
+          style={{
+            marginTop: "15vw",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#0198f1",
+            borderRadius: 18,
+            padding: "10px 5px",
+            cursor: "pointer",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: 18,
+            marginBottom: "6vw",
+          }}
+        >
           Escanear QR de la máquina
           <img
             src="/assets/qr.png"
@@ -181,63 +164,21 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Resultado del QR */}
-        {qrCodeRaw && (
+        {/* Campo de texto no editable para el QR */}
+        <div className="autocomplete-container" style={{ marginTop: "5vw" }}>
           <input
             type="text"
-            value={`Código QR escaneado: ${qrCodeRaw}`}
+            className="autocomplete-input"
+            value={qrCode}
             readOnly
+            placeholder="Aquí aparecerá el código QR escaneado"
             style={{
-              marginTop: "4vw",
-              marginLeft: "auto",
-              marginRight: "auto",
-              padding: "3vw 4vw",
-              backgroundColor: "#f2f2f2",
-              borderRadius: 12,
-              width: "92vw",
-              maxWidth: 600,
-              fontSize: "4vw",
-              color: "#666",
-              border: "1.5px solid #ccc",
-              textAlign: "center",
+              backgroundColor: "#f4f4f4",
+              color: "#0198f1",
+              fontWeight: "bold",
             }}
           />
-        )}
-
-        {machineNameFromApi && (
-          <input
-            type="text"
-            value={`Máquina detectada: ${machineNameFromApi}`}
-            readOnly
-            style={{
-              marginTop: "2vw",
-              marginLeft: "auto",
-              marginRight: "auto",
-              padding: "3vw 4vw",
-              backgroundColor: "#f9f9f9",
-              borderRadius: 12,
-              width: "92vw",
-              maxWidth: 600,
-              fontSize: "4vw",
-              color: "#333",
-              border: "1.5px solid #ccc",
-              textAlign: "center",
-            }}
-          />
-        )}
-
-        {notFound && (
-          <div
-            style={{
-              marginTop: "2vw",
-              textAlign: "center",
-              color: "red",
-              fontSize: "4vw",
-            }}
-          >
-            ❌ No se ha encontrado una máquina válida
-          </div>
-        )}
+        </div>
 
         {/* Lector QR activo */}
         {scanning && (
@@ -286,9 +227,7 @@ export default function MachineSelection({ onSelectMachine }) {
             {showDropdown && (
               <div className="dropdown">
                 {filtered.length === 0 && (
-                  <div className="dropdown-item disabled">
-                    No hay resultados
-                  </div>
+                  <div className="dropdown-item disabled">No hay resultados</div>
                 )}
                 {filtered.map((machine, idx) => (
                   <div
@@ -304,6 +243,7 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
+        {/* Error */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
