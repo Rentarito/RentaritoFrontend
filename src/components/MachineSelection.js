@@ -14,6 +14,10 @@ export default function MachineSelection({ onSelectMachine }) {
   const [qrCode, setQrCode] = useState("");
   const inputRef = useRef();
 
+  // Ref para mantener el objeto del escáner y el estado running
+  const qrScannerRef = useRef(null);
+  const runningRef = useRef(false);
+
   useEffect(() => {
     async function loadMachines() {
       try {
@@ -34,8 +38,8 @@ export default function MachineSelection({ onSelectMachine }) {
   useEffect(() => {
     if (!scanning) return;
 
+    let cancelled = false;
     let html5QrCode = null;
-    let scannerIsRunning = false;
 
     const tryStartScanner = () => {
       if (!document.getElementById("qr-reader")) {
@@ -44,6 +48,7 @@ export default function MachineSelection({ onSelectMachine }) {
       }
 
       html5QrCode = new Html5Qrcode("qr-reader", { verbose: false });
+      qrScannerRef.current = html5QrCode;
 
       Html5Qrcode.getCameras()
         .then((devices) => {
@@ -60,11 +65,12 @@ export default function MachineSelection({ onSelectMachine }) {
               cameraId,
               { fps: 10, qrbox: { width: 250, height: 250 } },
               (decodedText) => {
-                setQrCode(decodedText);    // Mostrar código
-                setScanning(false);        // Esto desmonta el div y hace cleanup
+                if (cancelled) return;
+                setQrCode(decodedText);
+                setScanning(false);
               }
             )
-            .then(() => { scannerIsRunning = true; })
+            .then(() => { runningRef.current = true; })
             .catch(() => {
               setScanning(false);
               alert("No se pudo iniciar el escáner.");
@@ -78,11 +84,15 @@ export default function MachineSelection({ onSelectMachine }) {
 
     setTimeout(tryStartScanner, 100);
 
-    // Cleanup: para el escáner si está activo y sólo si está corriendo
+    // Cleanup: solo para si runningRef.current es true
     return () => {
-      if (html5QrCode && scannerIsRunning) {
-        html5QrCode.stop().catch(() => {});
+      cancelled = true;
+      const scanner = qrScannerRef.current;
+      if (scanner && runningRef.current) {
+        scanner.stop().catch(() => {});
+        runningRef.current = false;
       }
+      qrScannerRef.current = null;
     };
   }, [scanning]);
 
