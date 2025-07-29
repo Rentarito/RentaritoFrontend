@@ -101,7 +101,8 @@ export default function MachineSelection({ onSelectMachine }) {
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(xmlText, "application/xml");
 
-                const valueNode = xml.querySelector("Value");
+                const valueNodes = xml.getElementsByTagName("Value");
+                const valueNode = valueNodes.length > 0 ? valueNodes[0] : null;
                 const folderName = valueNode?.textContent?.trim();
 
                 if (!folderName) {
