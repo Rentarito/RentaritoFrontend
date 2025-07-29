@@ -12,10 +12,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [qrCode, setQrCode] = useState("");
-
-  const scannerRef = useRef();
   const inputRef = useRef();
-  const scanningStoppedRef = useRef(true); // <-- Nuevo
 
   useEffect(() => {
     async function loadMachines() {
@@ -36,15 +33,20 @@ export default function MachineSelection({ onSelectMachine }) {
 
   useEffect(() => {
     if (!scanning) return;
-    const qrRegionId = "qr-reader";
+
     let html5QrCode = null;
     let stopped = false;
 
-    // Espera a que el div esté realmente en el DOM (por si React tarda)
-    setTimeout(() => {
-      if (!document.getElementById(qrRegionId)) return;
+    // Esperar a que el div esté realmente montado en el DOM
+    const tryStartScanner = () => {
+      if (!document.getElementById("qr-reader")) {
+        console.log("⌛ Esperando a que el div qr-reader esté en el DOM...");
+        setTimeout(tryStartScanner, 100); // Espera y vuelve a intentar
+        return;
+      }
 
-      html5QrCode = new Html5Qrcode(qrRegionId, { verbose: false });
+      console.log("✅ Div qr-reader listo. Iniciando escáner...");
+      html5QrCode = new Html5Qrcode("qr-reader", { verbose: false });
 
       Html5Qrcode.getCameras()
         .then((devices) => {
@@ -54,32 +56,40 @@ export default function MachineSelection({ onSelectMachine }) {
           if (!cameraId) {
             alert("No se detectó ninguna cámara.");
             setScanning(false);
+            stopped = true;
             return;
           }
-          html5QrCode.start(
-            cameraId,
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            async (decodedText) => {
-              if (stopped) return;
-              setQrCode(decodedText);
+          html5QrCode
+            .start(
+              cameraId,
+              { fps: 10, qrbox: { width: 250, height: 250 } },
+              async (decodedText) => {
+                if (stopped) return;
+                setQrCode(decodedText);
+                stopped = true;
+                try {
+                  await html5QrCode.stop();
+                } catch (e) {}
+                setScanning(false);
+              }
+            )
+            .catch((err) => {
+              setScanning(false);
               stopped = true;
-              try {
-                await html5QrCode.stop();
-              } catch (e) {}
-              setScanning(false); // Solo desmonta el div después de stop
-            }
-          ).catch((err) => {
-            setScanning(false);
-            alert("No se pudo iniciar el escáner.");
-          });
+              alert("No se pudo iniciar el escáner.");
+            });
         })
         .catch(() => {
           setScanning(false);
+          stopped = true;
           alert("Permiso de cámara denegado o no disponible.");
         });
-    }, 200); // Espera 200ms por si React tarda en poner el div
+    };
 
-    // Cleanup SIEMPRE
+    // Inicia el scanner solo cuando el div esté seguro
+    setTimeout(tryStartScanner, 100);
+
+    // Cleanup SIEMPRE: parar el escáner al desmontar
     return () => {
       if (html5QrCode && !stopped) {
         html5QrCode.stop().catch(() => {});
@@ -182,6 +192,7 @@ export default function MachineSelection({ onSelectMachine }) {
               maxWidth: 400,
               margin: "0 auto 20px",
               borderRadius: 10,
+              background: "#222",
             }}
           ></div>
         )}
