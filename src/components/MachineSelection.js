@@ -12,9 +12,10 @@ export default function MachineSelection({ onSelectMachine }) {
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [qrCode, setQrCode] = useState(""); // <-- Estado para el código QR
+  const [qrCode, setQrCode] = useState(""); // <--- Aquí se guarda el QR
 
   const inputRef = useRef();
+  const scannerRef = useRef(null);
 
   useEffect(() => {
     async function loadMachines() {
@@ -60,12 +61,12 @@ export default function MachineSelection({ onSelectMachine }) {
     setScanning(true);
   };
 
-  // Escáner QR: solo guardar el código y cerrar el escáner
   useEffect(() => {
     const qrRegionId = "qr-reader";
     if (!scanning) return;
 
     const html5QrCode = new Html5Qrcode(qrRegionId);
+    scannerRef.current = html5QrCode;
 
     Html5Qrcode.getCameras()
       .then((devices) => {
@@ -85,31 +86,34 @@ export default function MachineSelection({ onSelectMachine }) {
             cameraId,
             { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
-              setQrCode(decodedText); // Guarda el código QR leído
+              setQrCode(decodedText);
               setScanning(false);
-              await html5QrCode.stop();
-              // Limpia el div del escáner por si acaso
-              const el = document.getElementById(qrRegionId);
-              if (el) el.innerHTML = "";
+              try {
+                await html5QrCode.stop();
+              } catch (e) {
+                // No pasa nada si falla
+              }
+              // IMPORTANTE: No toques el innerHTML, deja que React quite el div
             },
             (errorMessage) => {
-              console.warn("⚠️ Error escaneando:", errorMessage);
+              // Ignora errores de escaneo continuos
             }
           )
           .catch((err) => {
-            console.error("❌ Error al iniciar escáner:", err);
             alert("No se pudo iniciar el escáner.");
             setScanning(false);
           });
       })
       .catch((err) => {
-        console.error("❌ Error accediendo a cámara:", err);
         alert("Permiso de cámara denegado o no disponible.");
         setScanning(false);
       });
 
+    // Cleanup robusto: siempre para el escáner si cambia el estado
     return () => {
-      html5QrCode.stop().catch(() => {});
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+      }
     };
   }, [scanning]);
 
@@ -126,7 +130,6 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card">
-        {/* Encabezado */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
@@ -164,7 +167,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Campo de texto no editable para el QR */}
+        {/* Campo QR SOLO LECTURA */}
         <div className="autocomplete-container" style={{ marginTop: "5vw" }}>
           <input
             type="text"
@@ -180,7 +183,7 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Lector QR activo */}
+        {/* Lector QR */}
         {scanning && (
           <div
             id="qr-reader"
@@ -193,7 +196,7 @@ export default function MachineSelection({ onSelectMachine }) {
           ></div>
         )}
 
-        {/* Buscador manual */}
+        {/* Buscador */}
         <div className="search-row">
           <div className="autocomplete-container">
             <input
@@ -243,7 +246,6 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
-        {/* Error */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
