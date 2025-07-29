@@ -60,7 +60,6 @@ export default function MachineSelection({ onSelectMachine }) {
     setScanning(true);
   };
 
-  // Activar escáner solo cuando scanning === true y el div ya está en el DOM
   useEffect(() => {
     const qrRegionId = "qr-reader";
     if (!scanning) return;
@@ -98,35 +97,35 @@ export default function MachineSelection({ onSelectMachine }) {
                   )}`
                 );
 
-                const result = await response.json();
-                const folderName = result.Result?.trim();
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(xmlText, "application/xml");
 
-                const folderNameLower = folderName.toLowerCase();
-                const match = machines.find(m => m.toLowerCase() === folderNameLower);
+                const valueNode = xml.querySelector("Value");
+                const folderName = valueNode?.textContent?.trim();
 
                 if (!folderName) {
-                  alert("El QR no devolvió ningún nombre de máquina.");
+                  alert("La API no devolvió una máquina válida.");
                   return;
                 }
 
-                // Normalizamos para comparar ignorando mayúsculas, espacios, etc.
-                const normalize = str => str.toLowerCase().replace(/\s|-/g, "");
-
+                const normalize = (str) =>
+                  str.toLowerCase().replace(/\s|-/g, "");
                 const folderNorm = normalize(folderName);
-                const matched = machines.find(m => normalize(m) === folderNorm);
+                const matched = machines.find(
+                  (m) => normalize(m) === folderNorm
+                );
 
                 if (!matched) {
-                  alert("El QR no pertenece a una máquina válida.");
+                  alert(
+                    `La máquina "${folderName}" no está disponible en la aplicación.`
+                  );
                   return;
                 }
 
                 handleSelect(matched);
-
-                handleSelect(match);
-
-                handleSelect(folderName);
               } catch (err) {
-                console.error("❌ Error en la API:", err);
+                console.error("❌ Error al procesar la respuesta de la API:", err);
                 alert("Error al consultar la máquina.");
               }
             },
