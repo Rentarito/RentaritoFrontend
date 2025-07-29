@@ -44,21 +44,18 @@ export default function MachineSelection({ onSelectMachine }) {
     let codeReader = new BrowserQRCodeReader();
     readerRef.current = codeReader;
 
-    console.log("🔵 Iniciando escáner...");
-
     codeReader
       .decodeOnceFromVideoDevice(undefined, videoRef.current)
       .then((result) => {
         if (cancelled) return;
-        console.log("🟢 Código leído:", result.text);
         setQrCode(result.text);
-        setScanning(false);
+        // 🟢 NO desmontamos el <video> instantáneamente, esperamos 500ms
+        setTimeout(() => setScanning(false), 500);
       })
       .catch((err) => {
         if (cancelled) return;
-        console.log("🟡 Error al escanear:", err);
         setError("No se pudo escanear: " + err.message);
-        setScanning(false);
+        setTimeout(() => setScanning(false), 500);
       });
 
     // Cleanup robusto al desmontar
@@ -67,12 +64,8 @@ export default function MachineSelection({ onSelectMachine }) {
       if (codeReader) {
         try {
           codeReader.reset();
-          console.log("🟡 Scanner reseteado y limpiado.");
-        } catch (e) {
-          console.log("❌ Error en cleanup:", e);
-        }
+        } catch (e) {}
       }
-      // Extra: limpiar el stream del video tras un retardo para evitar errores en algunos navegadores
       cleanupTimeout.current = setTimeout(() => {
         if (videoRef.current) videoRef.current.srcObject = null;
       }, 300);
