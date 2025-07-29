@@ -95,7 +95,6 @@ export default function MachineSelection({ onSelectMachine }) {
               },
               (errorMessage) => {
                 // Solo loggear, no mostrar cada error menor
-                //console.log("QR error: ", errorMessage);
               }
             )
             .catch((err) => {
@@ -120,6 +119,24 @@ export default function MachineSelection({ onSelectMachine }) {
       }
     };
   }, [showQRModal]);
+
+  // --- handler para cerrar bien el modal QR ---
+  const handleCloseQRModal = () => {
+    if (qrCodeScannerRef.current) {
+      qrCodeScannerRef.current
+        .stop()
+        .catch(() => {})
+        .then(() => {
+          return qrCodeScannerRef.current.clear().catch(() => {});
+        })
+        .finally(() => {
+          qrCodeScannerRef.current = null;
+          setShowQRModal(false);
+        });
+    } else {
+      setShowQRModal(false);
+    }
+  };
 
   return (
     <div
@@ -221,15 +238,7 @@ export default function MachineSelection({ onSelectMachine }) {
             >
               <div style={{ textAlign: "right" }}>
                 <button
-                  onClick={() => {
-                    // PARAR y limpiar el scanner al cerrar el modal
-                    if (qrCodeScannerRef.current) {
-                      qrCodeScannerRef.current.stop().catch(() => {});
-                      qrCodeScannerRef.current.clear().catch(() => {});
-                      qrCodeScannerRef.current = null;
-                    }
-                    setShowQRModal(false);
-                  }}
+                  onClick={handleCloseQRModal}
                   style={{
                     background: "none",
                     border: "none",
