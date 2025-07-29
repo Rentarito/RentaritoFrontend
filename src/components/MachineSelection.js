@@ -12,9 +12,12 @@ export default function MachineSelection({ onSelectMachine }) {
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [qrCode, setQrCode] = useState("");
-  const inputRef = useRef();
   const videoRef = useRef();
+  const readerRef = useRef();
+  const cleanupTimeout = useRef();
+  const inputRef = useRef();
 
+  // Cargar lista de máquinas solo al inicio
   useEffect(() => {
     async function loadMachines() {
       try {
@@ -32,34 +35,65 @@ export default function MachineSelection({ onSelectMachine }) {
     loadMachines();
   }, []);
 
-  // --- Scanner ZXing
+  // Arranca ZXing solo si scanning=true
   useEffect(() => {
-    let codeReader;
-    let abort = false;
     if (!scanning) return;
 
-    codeReader = new BrowserQRCodeReader();
+    setError(null);
+    let cancelled = false;
+    let codeReader = new BrowserQRCodeReader();
+    readerRef.current = codeReader;
+
+    console.log("🔵 Iniciando escáner...");
+
     codeReader
       .decodeOnceFromVideoDevice(undefined, videoRef.current)
       .then((result) => {
-        if (!abort) {
-          setQrCode(result.text);
-          setScanning(false);
-        }
+        if (cancelled) return;
+        console.log("🟢 Código leído:", result.text);
+        setQrCode(result.text);
+        setScanning(false);
       })
       .catch((err) => {
-        if (!abort) {
-          alert("No se pudo escanear: " + err.message);
-          setScanning(false);
-        }
+        if (cancelled) return;
+        console.log("🟡 Error al escanear:", err);
+        setError("No se pudo escanear: " + err.message);
+        setScanning(false);
       });
 
+    // Cleanup robusto al desmontar
     return () => {
-      abort = true;
-      if (codeReader) codeReader.reset();
+      cancelled = true;
+      if (codeReader) {
+        try {
+          codeReader.reset();
+          console.log("🟡 Scanner reseteado y limpiado.");
+        } catch (e) {
+          console.log("❌ Error en cleanup:", e);
+        }
+      }
+      // Extra: limpiar el stream del video tras un retardo para evitar errores en algunos navegadores
+      cleanupTimeout.current = setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = null;
+      }, 300);
     };
   }, [scanning]);
 
+  // Cleanup global si desmonta el componente
+  useEffect(() => {
+    return () => {
+      if (readerRef.current) {
+        try {
+          readerRef.current.reset();
+        } catch (e) {}
+      }
+      if (cleanupTimeout.current) {
+        clearTimeout(cleanupTimeout.current);
+      }
+    };
+  }, []);
+
+  // Filtro del buscador de máquinas
   useEffect(() => {
     if (input.trim() === "") {
       setFiltered(machines);
@@ -145,6 +179,11 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
+        {/* Mostrar error del QR si hay */}
+        {error && (
+          <div style={{ color: "red", marginTop: 16 }}>{error}</div>
+        )}
+
         {/* Lector QR solo si está escaneando */}
         {scanning && (
           <div
@@ -228,9 +267,6 @@ export default function MachineSelection({ onSelectMachine }) {
             )}
           </div>
         </div>
-
-        {/* Error */}
-        {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
   );
