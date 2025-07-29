@@ -12,7 +12,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [qrCodeRaw, setQrCodeRaw] = useState(""); // 🆕 Nuevo estado
+  const [machineNameFromApi, setMachineNameFromApi] = useState("");
 
   const inputRef = useRef();
 
@@ -57,7 +57,6 @@ export default function MachineSelection({ onSelectMachine }) {
   };
 
   const handleQR = () => {
-    console.log("🟡 handleQR fue llamado");
     setScanning(true);
   };
 
@@ -69,7 +68,6 @@ export default function MachineSelection({ onSelectMachine }) {
 
     Html5Qrcode.getCameras()
       .then((devices) => {
-        console.log("📷 Cámaras detectadas:", devices);
         if (!devices || devices.length === 0) {
           alert("No se detectó ninguna cámara.");
           setScanning(false);
@@ -86,9 +84,6 @@ export default function MachineSelection({ onSelectMachine }) {
             cameraId,
             { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
-              console.log("✅ Código escaneado:", decodedText);
-              setQrCodeRaw(decodedText); // 🆕 Guardamos el código leído
-
               await html5QrCode.stop();
               document.getElementById(qrRegionId).innerHTML = "";
               setScanning(false);
@@ -101,55 +96,34 @@ export default function MachineSelection({ onSelectMachine }) {
                 );
 
                 const xmlText = await response.text();
-                console.log("📄 XML recibido:", xmlText);
-
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(xmlText, "application/xml");
-
-                const valueNodes = xml.getElementsByTagName("Value");
-                const valueNode =
-                  valueNodes.length > 0 ? valueNodes[0] : null;
+                const valueNode = xml.querySelector("Value");
                 const folderName = valueNode?.textContent?.trim();
-
-                console.log("📦 Máquina extraída:", folderName);
 
                 if (!folderName) {
                   alert("La API no devolvió una máquina válida.");
                   return;
                 }
 
-                const normalize = (str) =>
-                  str.toLowerCase().replace(/\s|-/g, "");
-                const folderNorm = normalize(folderName);
-                const matched = machines.find(
-                  (m) => normalize(m) === folderNorm
-                );
-
-                if (!matched) {
-                  alert(
-                    `La máquina "${folderName}" no está disponible en la aplicación.`
-                  );
-                  return;
-                }
-
-                handleSelect(matched);
+                setMachineNameFromApi(folderName);
               } catch (err) {
-                console.error("❌ Error al procesar la respuesta de la API:", err);
+                console.error("Error al consultar la API:", err);
                 alert("Error al consultar la máquina.");
               }
             },
             (errorMessage) => {
-              console.warn("⚠️ Error escaneando:", errorMessage);
+              console.warn("Error escaneando:", errorMessage);
             }
           )
           .catch((err) => {
-            console.error("❌ Error al iniciar escáner:", err);
+            console.error("Error al iniciar escáner:", err);
             alert("No se pudo iniciar el escáner.");
             setScanning(false);
           });
       })
       .catch((err) => {
-        console.error("❌ Error accediendo a cámara:", err);
+        console.error("Error accediendo a cámara:", err);
         alert("Permiso de cámara denegado o no disponible.");
         setScanning(false);
       });
@@ -172,12 +146,10 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card">
-        {/* Encabezado */}
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
 
-        {/* Botón QR */}
         <div
           className="btn-escanear-qr"
           tabIndex={0}
@@ -196,15 +168,17 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* 🆕 Mostrar código escaneado */}
-        {qrCodeRaw && (
-          <div
+        {machineNameFromApi && (
+          <input
+            type="text"
+            value={machineNameFromApi}
+            readOnly
             style={{
               marginTop: "4vw",
               marginLeft: "auto",
               marginRight: "auto",
               padding: "3vw 4vw",
-              backgroundColor: "#f9f9f9",
+              backgroundColor: "#f2f2f2",
               borderRadius: 12,
               width: "92vw",
               maxWidth: 600,
@@ -213,12 +187,9 @@ export default function MachineSelection({ onSelectMachine }) {
               border: "1.5px solid #ccc",
               textAlign: "center",
             }}
-          >
-            Código QR leído: <strong>{qrCodeRaw}</strong>
-          </div>
+          />
         )}
 
-        {/* Lector QR */}
         {scanning && (
           <div
             id="qr-reader"
@@ -231,7 +202,6 @@ export default function MachineSelection({ onSelectMachine }) {
           ></div>
         )}
 
-        {/* Buscador */}
         <div className="search-row">
           <div className="autocomplete-container">
             <input
@@ -283,7 +253,6 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
-        {/* Error */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
       </div>
     </div>
