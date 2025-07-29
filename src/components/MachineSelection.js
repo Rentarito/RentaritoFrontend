@@ -14,7 +14,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [qrCode, setQrCode] = useState("");
   const inputRef = useRef();
 
-  // Ref para mantener el objeto del escáner y el estado running
+  // Guardamos el escáner y su estado
   const qrScannerRef = useRef(null);
   const runningRef = useRef(false);
 
@@ -84,15 +84,26 @@ export default function MachineSelection({ onSelectMachine }) {
 
     setTimeout(tryStartScanner, 100);
 
-    // Cleanup: solo para si runningRef.current es true
+    // --- LIMPIEZA ROBUSTA ---
     return () => {
       cancelled = true;
       const scanner = qrScannerRef.current;
+      // try/catch siempre: nunca fallará el cleanup
       if (scanner && runningRef.current) {
-        scanner.stop().catch(() => {});
+        try {
+          scanner.stop()
+            .then(() => {
+              // Limpia el div si existe, por si queda "atascado"
+              const qrDiv = document.getElementById("qr-reader");
+              if (qrDiv) qrDiv.innerHTML = "";
+            })
+            .catch(() => { });
+        } catch (e) {
+          // Nunca lances error aquí
+        }
         runningRef.current = false;
+        qrScannerRef.current = null;
       }
-      qrScannerRef.current = null;
     };
   }, [scanning]);
 
