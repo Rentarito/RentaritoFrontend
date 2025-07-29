@@ -36,54 +36,54 @@ export default function MachineSelection({ onSelectMachine }) {
 
   useEffect(() => {
     if (!scanning) return;
-
     const qrRegionId = "qr-reader";
-    let html5QrCode = new Html5Qrcode(qrRegionId, { verbose: false });
-    scannerRef.current = html5QrCode;
-    scanningStoppedRef.current = false;
+    let html5QrCode = null;
+    let stopped = false;
 
-    Html5Qrcode.getCameras()
-      .then((devices) => {
-        const cameraId =
-          devices.find((d) => d.label.toLowerCase().includes("back"))?.id ||
-          devices[0]?.id;
-        if (!cameraId) {
-          alert("No se detectó ninguna cámara.");
-          setScanning(false);
-          scanningStoppedRef.current = true;
-          return;
-        }
-        html5QrCode
-          .start(
+    // Espera a que el div esté realmente en el DOM (por si React tarda)
+    setTimeout(() => {
+      if (!document.getElementById(qrRegionId)) return;
+
+      html5QrCode = new Html5Qrcode(qrRegionId, { verbose: false });
+
+      Html5Qrcode.getCameras()
+        .then((devices) => {
+          const cameraId =
+            devices.find((d) => d.label.toLowerCase().includes("back"))?.id ||
+            devices[0]?.id;
+          if (!cameraId) {
+            alert("No se detectó ninguna cámara.");
+            setScanning(false);
+            return;
+          }
+          html5QrCode.start(
             cameraId,
             { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
+              if (stopped) return;
               setQrCode(decodedText);
+              stopped = true;
               try {
                 await html5QrCode.stop();
               } catch (e) {}
-              scanningStoppedRef.current = true;
-              setScanning(false); // <-- SIEMPRE al final
+              setScanning(false); // Solo desmonta el div después de stop
             }
-          )
-          .catch((err) => {
+          ).catch((err) => {
             setScanning(false);
-            scanningStoppedRef.current = true;
             alert("No se pudo iniciar el escáner.");
           });
-      })
-      .catch(() => {
-        setScanning(false);
-        scanningStoppedRef.current = true;
-        alert("Permiso de cámara denegado o no disponible.");
-      });
+        })
+        .catch(() => {
+          setScanning(false);
+          alert("Permiso de cámara denegado o no disponible.");
+        });
+    }, 200); // Espera 200ms por si React tarda en poner el div
 
-    // Limpieza: SIEMPRE intenta parar el escáner al desmontar
+    // Cleanup SIEMPRE
     return () => {
-      if (scannerRef.current && !scanningStoppedRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-        scanningStoppedRef.current = true;
+      if (html5QrCode && !stopped) {
+        html5QrCode.stop().catch(() => {});
+        stopped = true;
       }
     };
   }, [scanning]);
