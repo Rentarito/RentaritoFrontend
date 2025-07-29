@@ -65,7 +65,6 @@ export default function MachineSelection({ onSelectMachine }) {
           codeReader.reset();
         } catch (e) {}
       }
-      // Extra: limpiar el stream del video tras un retardo para evitar errores en algunos navegadores
       cleanupTimeout.current = setTimeout(() => {
         if (videoRef.current) videoRef.current.srcObject = null;
       }, 300);
@@ -207,7 +206,16 @@ export default function MachineSelection({ onSelectMachine }) {
                 zIndex: 9999,
                 cursor: "pointer"
               }}
-              onClick={() => setScanning(false)}
+              onClick={() => {
+                setScanning(false);
+                // Limpieza estricta del vídeo y del reader:
+                if (readerRef.current) {
+                  try { readerRef.current.reset(); } catch (e) {}
+                }
+                if (videoRef.current) {
+                  try { videoRef.current.srcObject = null; } catch (e) {}
+                }
+              }}
               aria-label="Cerrar escáner"
             >
               ×
