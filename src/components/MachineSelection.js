@@ -15,6 +15,7 @@ export default function MachineSelection({ onSelectMachine }) {
 
   const scannerRef = useRef();
   const inputRef = useRef();
+  const scanningStoppedRef = useRef(true); // <-- Nuevo
 
   useEffect(() => {
     async function loadMachines() {
@@ -35,10 +36,11 @@ export default function MachineSelection({ onSelectMachine }) {
 
   useEffect(() => {
     if (!scanning) return;
-    const qrRegionId = "qr-reader";
-    let html5QrCode = new Html5Qrcode(qrRegionId);
 
+    const qrRegionId = "qr-reader";
+    let html5QrCode = new Html5Qrcode(qrRegionId, { verbose: false });
     scannerRef.current = html5QrCode;
+    scanningStoppedRef.current = false;
 
     Html5Qrcode.getCameras()
       .then((devices) => {
@@ -48,32 +50,41 @@ export default function MachineSelection({ onSelectMachine }) {
         if (!cameraId) {
           alert("No se detectó ninguna cámara.");
           setScanning(false);
+          scanningStoppedRef.current = true;
           return;
         }
         html5QrCode
           .start(
             cameraId,
             { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
+            async (decodedText) => {
               setQrCode(decodedText);
-              setScanning(false);
-              html5QrCode.stop().catch(() => {});
+              try {
+                await html5QrCode.stop();
+              } catch (e) {}
+              scanningStoppedRef.current = true;
+              setScanning(false); // <-- SIEMPRE al final
             }
           )
           .catch((err) => {
             setScanning(false);
+            scanningStoppedRef.current = true;
             alert("No se pudo iniciar el escáner.");
           });
       })
       .catch(() => {
         setScanning(false);
+        scanningStoppedRef.current = true;
         alert("Permiso de cámara denegado o no disponible.");
       });
 
-    // Cleanup: para el escáner si sales
+    // Limpieza: SIEMPRE intenta parar el escáner al desmontar
     return () => {
-      html5QrCode.stop().catch(() => {});
-      scannerRef.current = null;
+      if (scannerRef.current && !scanningStoppedRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+        scanningStoppedRef.current = true;
+      }
     };
   }, [scanning]);
 
