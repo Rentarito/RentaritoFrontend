@@ -35,7 +35,7 @@ export default function MachineSelection({ onSelectMachine }) {
     if (!scanning) return;
 
     let html5QrCode = null;
-    let running = false;
+    let scannerIsRunning = false;
 
     const tryStartScanner = () => {
       if (!document.getElementById("qr-reader")) {
@@ -59,14 +59,13 @@ export default function MachineSelection({ onSelectMachine }) {
             .start(
               cameraId,
               { fps: 10, qrbox: { width: 250, height: 250 } },
-              async (decodedText) => {
-                setQrCode(decodedText);
-                running = true;
-                setScanning(false); // Esto desmonta el div y hace cleanup
+              (decodedText) => {
+                setQrCode(decodedText);    // Mostrar código
+                setScanning(false);        // Esto desmonta el div y hace cleanup
               }
             )
-            .then(() => { running = true; })
-            .catch((err) => {
+            .then(() => { scannerIsRunning = true; })
+            .catch(() => {
               setScanning(false);
               alert("No se pudo iniciar el escáner.");
             });
@@ -79,14 +78,13 @@ export default function MachineSelection({ onSelectMachine }) {
 
     setTimeout(tryStartScanner, 100);
 
+    // Cleanup: para el escáner si está activo y sólo si está corriendo
     return () => {
-      if (html5QrCode && running) {
+      if (html5QrCode && scannerIsRunning) {
         html5QrCode.stop().catch(() => {});
-        running = false;
       }
     };
   }, [scanning]);
-
 
   useEffect(() => {
     if (input.trim() === "") {
