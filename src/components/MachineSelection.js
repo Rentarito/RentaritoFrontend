@@ -12,6 +12,7 @@ export default function MachineSelection({ onSelectMachine }) {
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [qrCodeRaw, setQrCodeRaw] = useState(""); // 🆕 Nuevo estado
 
   const inputRef = useRef();
 
@@ -86,6 +87,8 @@ export default function MachineSelection({ onSelectMachine }) {
             { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
               console.log("✅ Código escaneado:", decodedText);
+              setQrCodeRaw(decodedText); // 🆕 Guardamos el código leído
+
               await html5QrCode.stop();
               document.getElementById(qrRegionId).innerHTML = "";
               setScanning(false);
@@ -98,12 +101,17 @@ export default function MachineSelection({ onSelectMachine }) {
                 );
 
                 const xmlText = await response.text();
+                console.log("📄 XML recibido:", xmlText);
+
                 const parser = new DOMParser();
                 const xml = parser.parseFromString(xmlText, "application/xml");
 
                 const valueNodes = xml.getElementsByTagName("Value");
-                const valueNode = valueNodes.length > 0 ? valueNodes[0] : null;
+                const valueNode =
+                  valueNodes.length > 0 ? valueNodes[0] : null;
                 const folderName = valueNode?.textContent?.trim();
+
+                console.log("📦 Máquina extraída:", folderName);
 
                 if (!folderName) {
                   alert("La API no devolvió una máquina válida.");
@@ -174,20 +182,6 @@ export default function MachineSelection({ onSelectMachine }) {
           className="btn-escanear-qr"
           tabIndex={0}
           onClick={handleQR}
-          style={{
-            marginTop: "15vw",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#0198f1",
-            borderRadius: 18,
-            padding: "10px 5px",
-            cursor: "pointer",
-            color: "white",
-            fontWeight: "bold",
-            fontSize: 18,
-            marginBottom: "6vw",
-          }}
         >
           Escanear QR de la máquina
           <img
@@ -201,6 +195,28 @@ export default function MachineSelection({ onSelectMachine }) {
             }}
           />
         </div>
+
+        {/* 🆕 Mostrar código escaneado */}
+        {qrCodeRaw && (
+          <div
+            style={{
+              marginTop: "4vw",
+              marginLeft: "auto",
+              marginRight: "auto",
+              padding: "3vw 4vw",
+              backgroundColor: "#f9f9f9",
+              borderRadius: 12,
+              width: "92vw",
+              maxWidth: 600,
+              fontSize: "4vw",
+              color: "#333",
+              border: "1.5px solid #ccc",
+              textAlign: "center",
+            }}
+          >
+            Código QR leído: <strong>{qrCodeRaw}</strong>
+          </div>
+        )}
 
         {/* Lector QR */}
         {scanning && (
@@ -249,7 +265,9 @@ export default function MachineSelection({ onSelectMachine }) {
             {showDropdown && (
               <div className="dropdown">
                 {filtered.length === 0 && (
-                  <div className="dropdown-item disabled">No hay resultados</div>
+                  <div className="dropdown-item disabled">
+                    No hay resultados
+                  </div>
                 )}
                 {filtered.map((machine, idx) => (
                   <div
