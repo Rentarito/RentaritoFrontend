@@ -45,52 +45,35 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }, [input, machines]);
 
-  // El usuario elige máquina, solo se escribe en input (NO se navega aún)
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
-    // No navegamos aquí
   };
 
-  // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
   async function obtenerNombreMaquina(decodedText) {
     try {
       const codigo = decodedText.trim();
-      console.log("[DEBUG] Código QR leído:", JSON.stringify(codigo));
-
       const jsonParam = JSON.stringify({ rentalElement: codigo });
       const urlParam = encodeURIComponent(jsonParam);
       const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
-
-      console.log("[DEBUG] URL generada:", url);
-
       const response = await fetch(url);
       const text = await response.text();
-      console.log("[DEBUG] Respuesta recibida:", text);
-
-      // Intenta parsear como JSON
       let json = {};
       try {
         json = JSON.parse(text);
       } catch (e) {
-        console.log("[DEBUG] No es JSON válido");
         return "No encontrada";
       }
-
       if (json.Result) {
-        console.log("[DEBUG] Nombre de máquina encontrado:", json.Result);
         return json.Result;
       } else {
-        console.log("[DEBUG] No se encontró el nombre de la máquina en el JSON.");
         return "No encontrada";
       }
     } catch (err) {
-      console.error("[ERROR] Al consultar la máquina:", err);
       return "Error consultando máquina";
     }
   }
 
-  // ---- QR modal logic ----
   useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
@@ -139,9 +122,7 @@ export default function MachineSelection({ onSelectMachine }) {
                   qrCodeScannerRef.current = null;
                 });
               },
-              (errorMessage) => {
-                // Puedes loggear si quieres
-              }
+              (errorMessage) => {}
             )
             .catch((err) => {
               setError("No se pudo iniciar el escáner.");
@@ -155,7 +136,6 @@ export default function MachineSelection({ onSelectMachine }) {
         });
     }, 300);
 
-    // Limpieza extra si el componente se desmonta
     return () => {
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
@@ -175,6 +155,7 @@ export default function MachineSelection({ onSelectMachine }) {
         backgroundAttachment: "fixed",
         backgroundSize: "cover",
         minHeight: "100vh",
+        position: "relative",
       }}
     >
       <div className="selector-card">
@@ -215,7 +196,6 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
-        {/* Mostrar error del QR si hay */}
         {error && (
           <div style={{ color: "red", marginTop: 16 }}>{error}</div>
         )}
@@ -341,7 +321,6 @@ export default function MachineSelection({ onSelectMachine }) {
                     onMouseDown={() => {
                       setInput(machine);
                       setShowDropdown(false);
-                      // NO navegamos aquí
                     }}
                   >
                     {machine}
@@ -351,40 +330,45 @@ export default function MachineSelection({ onSelectMachine }) {
             )}
           </div>
         </div>
+      </div>
 
-        {/* --- Nuevo botón Preguntar a Rentarito --- */}
-        <div
+      {/* Botón abajo de la pantalla */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 999,
+          background: "rgba(255,255,255,0.65)",
+          padding: "18px 0 24px 0",
+          display: "flex",
+          justifyContent: "center",
+          width: "100vw",
+          boxSizing: "border-box",
+          pointerEvents: "auto",
+        }}
+      >
+        <button
+          onClick={() => input.trim() && onSelectMachine(input.trim())}
+          disabled={!input.trim()}
           style={{
+            background: "#0198f1",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: 18,
+            borderRadius: 16,
+            padding: "12px 36px",
+            border: "none",
+            boxShadow: "0 2px 12px #dde5fa",
+            cursor: input.trim() ? "pointer" : "not-allowed",
+            opacity: input.trim() ? 1 : 0.6,
             width: "92vw",
-            maxWidth: 600,
-            margin: "5vw auto 0 auto",
-            display: "flex",
-            justifyContent: "center"
+            maxWidth: 360,
           }}
         >
-          <button
-            onClick={() => input.trim() && onSelectMachine(input.trim())}
-            disabled={!input.trim()}
-            style={{
-              background: "#0198f1",
-              color: "white",
-              fontWeight: "bold",
-              fontSize: 18,
-              borderRadius: 16,
-              padding: "12px 36px",
-              border: "none",
-              boxShadow: "0 2px 12px #dde5fa",
-              cursor: input.trim() ? "pointer" : "not-allowed",
-              opacity: input.trim() ? 1 : 0.6,
-              transition: "opacity 0.15s",
-              width: "100%",
-              maxWidth: 360,
-            }}
-          >
-            Preguntar a Rentarito
-          </button>
-        </div>
-
+          Preguntar a Rentarito
+        </button>
       </div>
     </div>
   );
