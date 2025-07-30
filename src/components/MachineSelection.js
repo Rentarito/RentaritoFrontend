@@ -299,7 +299,7 @@ export default function MachineSelection({ onSelectMachine }) {
             <input
               type="text"
               className="autocomplete-input"
-              placeholder="Buscar máquina"
+              placeholder="Escriba o seleccione máquina"
               value={input}
               ref={inputRef}
               onFocus={() => setShowDropdown(true)}
