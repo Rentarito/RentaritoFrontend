@@ -335,19 +335,18 @@ export default function MachineSelection({ onSelectMachine }) {
       {/* Botón abajo de la pantalla */}
       <div
         style={{
-          position: "fixed",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 999,
-          background: "rgba(255,255,255,0.65)",
-          padding: "18px 0 24px 0",
-          display: "flex",
-          justifyContent: "center",
-          width: "100vw",
-          boxSizing: "border-box",
-          pointerEvents: "auto",
-        }}
+        position: "fixed",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 999,
+        padding: "18px 0 24px 0",
+        display: "flex",
+        justifyContent: "center",
+        width: "100vw",
+        boxSizing: "border-box",
+        pointerEvents: "auto",
+      }}
       >
         <button
           onClick={() => input.trim() && onSelectMachine(input.trim())}
