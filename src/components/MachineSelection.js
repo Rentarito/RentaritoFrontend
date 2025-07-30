@@ -122,9 +122,14 @@ export default function MachineSelection({ onSelectMachine }) {
           html5QrCode
             .start(
               backCamera.id,
-              { fps: 10, qrbox: { width: 250, height: 250 } },
+              {
+                fps: 10,
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                  return { width: minEdge * 0.92, height: minEdge * 0.92 };
+                }
+              },
               (decodedText) => {
-                // AQUÍ: Llamar a la función que consulta la API y pone el nombre
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
                   setQrCode(nombreMaquina);
                   setShowQRModal(false);
