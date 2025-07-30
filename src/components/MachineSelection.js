@@ -188,7 +188,7 @@ export default function MachineSelection({ onSelectMachine }) {
           tabIndex={0}
           onClick={() => setShowQRModal(true)}
           style={{
-            marginTop: "15vw",
+            marginTop: "12vw",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
