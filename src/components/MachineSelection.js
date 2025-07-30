@@ -10,7 +10,6 @@ export default function MachineSelection({ onSelectMachine }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
-  const [qrCode, setQrCode] = useState("");
   const [showQRModal, setShowQRModal] = useState(false);
 
   const qrCodeScannerRef = useRef(null);
@@ -45,55 +44,38 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }, [input, machines]);
 
+  // Ahora handleSelect solo rellena el input, no va al chat
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
-    setTimeout(() => onSelectMachine(machine), 300);
+    // Ya no: setTimeout(() => onSelectMachine(machine), 300);
   };
 
-  // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
+  // Función para el QR igual que ya tienes
   async function obtenerNombreMaquina(decodedText) {
+    // ... igual que antes ...
     try {
       const codigo = decodedText.trim();
-      console.log("[DEBUG] Código QR leído:", JSON.stringify(codigo));
-
       const jsonParam = JSON.stringify({ rentalElement: codigo });
       const urlParam = encodeURIComponent(jsonParam);
       const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
-
-      console.log("[DEBUG] URL generada:", url);
-
       const response = await fetch(url);
       const text = await response.text();
-      console.log("[DEBUG] Respuesta recibida:", text);
-
-      // Intenta parsear como JSON
       let json = {};
       try {
         json = JSON.parse(text);
-      } catch (e) {
-        console.log("[DEBUG] No es JSON válido");
-        return "No encontrada";
-      }
-
-      if (json.Result) {
-        console.log("[DEBUG] Nombre de máquina encontrado:", json.Result);
-        return json.Result;
-      } else {
-        console.log("[DEBUG] No se encontró el nombre de la máquina en el JSON.");
-        return "No encontrada";
-      }
-    } catch (err) {
-      console.error("[ERROR] Al consultar la máquina:", err);
+      } catch (e) { return "No encontrada"; }
+      if (json.Result) return json.Result;
+      else return "No encontrada";
+    } catch {
       return "Error consultando máquina";
     }
   }
 
-  // ---- QR modal logic ----
+  // ... QR modal logic igual que antes ...
   useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
-      // Si ocultas el modal, limpia el escáner
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -101,17 +83,14 @@ export default function MachineSelection({ onSelectMachine }) {
       }
       return;
     }
-
     setTimeout(() => {
       const html5QrCode = new Html5Qrcode(regionId, { verbose: false });
       qrCodeScannerRef.current = html5QrCode;
-
       Html5Qrcode.getCameras()
         .then((devices) => {
           const backCamera =
-            devices.find((d) =>
-              d.label.toLowerCase().includes("back")
-            ) || devices[0];
+            devices.find((d) => d.label.toLowerCase().includes("back")) ||
+            devices[0];
           if (!backCamera) {
             setError("No se detectó ninguna cámara.");
             setShowQRModal(false);
@@ -122,10 +101,10 @@ export default function MachineSelection({ onSelectMachine }) {
               backCamera.id,
               {
                 fps: 10,
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                qrbox: function (viewfinderWidth, viewfinderHeight) {
                   const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                  return { width: minEdge * 0.80, height: minEdge * 0.98 };
-                }
+                  return { width: minEdge * 0.8, height: minEdge * 0.98 };
+                },
               },
               (decodedText) => {
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
@@ -138,9 +117,6 @@ export default function MachineSelection({ onSelectMachine }) {
                     .catch(() => {});
                   qrCodeScannerRef.current = null;
                 });
-              },
-              (errorMessage) => {
-                // Puedes loggear si quieres
               }
             )
             .catch((err) => {
@@ -154,8 +130,6 @@ export default function MachineSelection({ onSelectMachine }) {
           setShowQRModal(false);
         });
     }, 300);
-
-    // Limpieza extra si el componente se desmonta
     return () => {
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
@@ -181,26 +155,11 @@ export default function MachineSelection({ onSelectMachine }) {
         <div className="header-selection">
           <div className="title-header">Chatea con Rentaire</div>
         </div>
-
         {/* Botón QR */}
         <div
           className="btn-escanear-qr"
           tabIndex={0}
           onClick={() => setShowQRModal(true)}
-          style={{
-            marginTop: "10vw",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "#0198f1",
-            borderRadius: 18,
-            padding: "10px 5px",
-            cursor: "pointer",
-            color: "white",
-            fontWeight: "bold",
-            fontSize: 18,
-            marginBottom: "6vw",
-          }}
         >
           Escanear QR de la máquina
           <img
@@ -214,12 +173,8 @@ export default function MachineSelection({ onSelectMachine }) {
             }}
           />
         </div>
-
         {/* Mostrar error del QR si hay */}
-        {error && (
-          <div style={{ color: "red", marginTop: 16 }}>{error}</div>
-        )}
-
+        {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
         {/* --- MODAL QR --- */}
         {showQRModal && (
           <div
@@ -250,7 +205,6 @@ export default function MachineSelection({ onSelectMachine }) {
               <div style={{ textAlign: "right" }}>
                 <button
                   onClick={async () => {
-                    // PARAR y limpiar el scanner al cerrar el modal de forma segura
                     if (qrCodeScannerRef.current) {
                       try {
                         await qrCodeScannerRef.current.stop();
@@ -286,7 +240,14 @@ export default function MachineSelection({ onSelectMachine }) {
                   overflow: "hidden",
                 }}
               />
-              <div style={{ color: "#0198f1", marginTop: 12, textAlign: "center", fontWeight: "bold" }}>
+              <div
+                style={{
+                  color: "#0198f1",
+                  marginTop: 12,
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
                 Apunta con la cámara al QR
               </div>
             </div>
@@ -348,6 +309,43 @@ export default function MachineSelection({ onSelectMachine }) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* --- NUEVO BOTÓN ABAJO --- */}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100vw",
+          background: "rgba(255,255,255,0.96)",
+          padding: "18px 0 26px 0",
+          boxShadow: "0 -2px 22px #ccd6ee",
+          zIndex: 999,
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <button
+          style={{
+            background: "#0198f1",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: 20,
+            borderRadius: 18,
+            padding: "14px 36px",
+            border: "none",
+            boxShadow: "0 2px 12px #abc",
+            cursor: input.trim() ? "pointer" : "not-allowed",
+            opacity: input.trim() ? 1 : 0.7,
+            transition: "opacity 0.15s",
+          }}
+          disabled={!input.trim()}
+          onClick={() => onSelectMachine(input.trim())}
+        >
+          Preguntar a Rentarito
+        </button>
       </div>
     </div>
   );
