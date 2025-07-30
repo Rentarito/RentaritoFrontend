@@ -45,10 +45,11 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }, [input, machines]);
 
+  // El usuario elige máquina, solo se escribe en input (NO se navega aún)
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
-    setTimeout(() => onSelectMachine(machine), 300);
+    // No navegamos aquí
   };
 
   // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
@@ -93,7 +94,6 @@ export default function MachineSelection({ onSelectMachine }) {
   useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
-      // Si ocultas el modal, limpia el escáner
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -250,7 +250,6 @@ export default function MachineSelection({ onSelectMachine }) {
               <div style={{ textAlign: "right" }}>
                 <button
                   onClick={async () => {
-                    // PARAR y limpiar el scanner al cerrar el modal de forma segura
                     if (qrCodeScannerRef.current) {
                       try {
                         await qrCodeScannerRef.current.stop();
@@ -339,7 +338,11 @@ export default function MachineSelection({ onSelectMachine }) {
                   <div
                     className="dropdown-item"
                     key={machine + idx}
-                    onMouseDown={() => handleSelect(machine)}
+                    onMouseDown={() => {
+                      setInput(machine);
+                      setShowDropdown(false);
+                      // NO navegamos aquí
+                    }}
                   >
                     {machine}
                   </div>
@@ -348,6 +351,40 @@ export default function MachineSelection({ onSelectMachine }) {
             )}
           </div>
         </div>
+
+        {/* --- Nuevo botón Preguntar a Rentarito --- */}
+        <div
+          style={{
+            width: "92vw",
+            maxWidth: 600,
+            margin: "5vw auto 0 auto",
+            display: "flex",
+            justifyContent: "center"
+          }}
+        >
+          <button
+            onClick={() => input.trim() && onSelectMachine(input.trim())}
+            disabled={!input.trim()}
+            style={{
+              background: "#0198f1",
+              color: "white",
+              fontWeight: "bold",
+              fontSize: 18,
+              borderRadius: 16,
+              padding: "12px 36px",
+              border: "none",
+              boxShadow: "0 2px 12px #dde5fa",
+              cursor: input.trim() ? "pointer" : "not-allowed",
+              opacity: input.trim() ? 1 : 0.6,
+              transition: "opacity 0.15s",
+              width: "100%",
+              maxWidth: 360,
+            }}
+          >
+            Preguntar a Rentarito
+          </button>
+        </div>
+
       </div>
     </div>
   );
