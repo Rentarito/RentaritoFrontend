@@ -317,7 +317,7 @@ export default function MachineSelection({ onSelectMachine }) {
               ref={inputRef}
               onFocus={() => { setShowDropdown(true); setInputFocused(true); }}
               onBlur={() => { setInputFocused(false); }}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value.toUpperCase())}
               style={{ minWidth: 0 }}
             />
             <button
