@@ -150,7 +150,6 @@ export default function MachineSelection({ onSelectMachine }) {
             });
         })
         .catch(() => {
-          setError("Permiso de cámara denegado o no disponible.");
           setShowQRModal(false);
         });
     }, 300);
