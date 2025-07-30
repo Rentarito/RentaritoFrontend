@@ -268,12 +268,15 @@ export default function MachineSelection({ onSelectMachine }) {
               <div style={{ textAlign: "right" }}>
                 <button
                   onClick={() => {
-                    if (qrCodeScannerRef.current) {
-                      qrCodeScannerRef.current.stop().catch(() => {});
-                      qrCodeScannerRef.current.clear().catch(() => {});
-                      qrCodeScannerRef.current = null;
-                    }
-                    setShowQRModal(false);
+                    setShowQRModal(false); // CIERRA el modal inmediatamente
+                    // Y después (con pequeño retardo), limpia el escáner
+                    setTimeout(() => {
+                      if (qrCodeScannerRef.current) {
+                        qrCodeScannerRef.current.stop().catch(() => {});
+                        qrCodeScannerRef.current.clear().catch(() => {});
+                        qrCodeScannerRef.current = null;
+                      }
+                    }, 100);
                   }}
                   style={{
                     background: "none",
