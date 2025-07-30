@@ -78,7 +78,7 @@ html, body, #root {
   position: relative;
   width: 92vw;
   max-width: 600px;
-  margin: 6vw auto 0 auto;
+  margin: 3vw auto 0 auto;
   display: flex;
   align-items: center;
 }
