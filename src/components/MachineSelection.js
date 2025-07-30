@@ -16,6 +16,27 @@ export default function MachineSelection({ onSelectMachine }) {
   const qrCodeScannerRef = useRef(null);
   const inputRef = useRef();
 
+  // ------------------------------
+  // Detectar teclado abierto
+  // ------------------------------
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const initialHeightRef = useRef(typeof window !== "undefined" ? window.innerHeight : 0);
+
+  useEffect(() => {
+    const threshold = 120; // px; puedes ajustar este valor si lo necesitas
+    const handleResize = () => {
+      if (typeof window === "undefined") return;
+      const heightDiff = initialHeightRef.current - window.innerHeight;
+      setKeyboardOpen(heightDiff > threshold);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+    // eslint-disable-next-line
+  }, []);
+
+  // ------------------------------
+
   useEffect(() => {
     async function loadMachines() {
       try {
@@ -342,8 +363,8 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
-        {/* BOTÓN PREGUNTAR ABAJO: solo si el input NO está enfocado */}
-        {!inputFocused && (
+        {/* BOTÓN PREGUNTAR ABAJO: solo si el teclado NO está abierto */}
+        {!keyboardOpen && (
           <div
             style={{
               position: "fixed",
