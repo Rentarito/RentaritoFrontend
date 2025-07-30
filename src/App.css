@@ -118,7 +118,8 @@ html, body, #root {
   box-shadow: 0 4px 14px rgba(50,109,201,0.09);
   z-index: 10;
   max-height: 220px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .dropdown-item {
   padding: 3vw 0;
@@ -398,4 +399,26 @@ html, body, #root {
 .chat-area {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
+}
+
+/* Scrollbar visible y personalizado para el dropdown */
+.dropdown {
+  scrollbar-color: #0198f1 #eaf2fb;   /* color barra y fondo */
+  scrollbar-width: thin;              /* Firefox */
+}
+
+/* Webkit (Chrome, Edge, Safari) */
+.dropdown::-webkit-scrollbar {
+  width: 8px;
+  background: #eaf2fb;
+  border-radius: 8px;
+}
+
+.dropdown::-webkit-scrollbar-thumb {
+  background: #0198f1;
+  border-radius: 8px;
+}
+
+.dropdown::-webkit-scrollbar-thumb:hover {
+  background: #0278bf;
 }
