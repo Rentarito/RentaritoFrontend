@@ -129,7 +129,8 @@ export default function MachineSelection({ onSelectMachine }) {
               },
               (decodedText) => {
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
-                  setQrCode(nombreMaquina);
+                  setInput(nombreMaquina || "");
+                  setShowDropdown(true);
                   setShowQRModal(false);
                   html5QrCode
                     .stop()
@@ -210,22 +211,6 @@ export default function MachineSelection({ onSelectMachine }) {
               width: 35,
               height: 35,
               backgroundColor: "#0198f1",
-            }}
-          />
-        </div>
-
-        {/* Campo de texto con QR */}
-        <div className="autocomplete-container" style={{ marginTop: "5vw" }}>
-          <input
-            type="text"
-            className="autocomplete-input"
-            value={qrCode}
-            readOnly
-            placeholder="Aquí aparecerá el nombre de la máquina"
-            style={{
-              backgroundColor: "#f4f4f4",
-              color: "#0198f1",
-              fontWeight: "bold",
             }}
           />
         </div>
