@@ -151,7 +151,7 @@ html, body, #root {
   color: white;
   font-weight: bold;
   font-size: 5vw; min-font-size: 16px; max-font-size: 21px;
-  margin: 3vw auto 0 auto;
+  margin: 1vw auto 0 auto;
   width: 92vw;
   max-width: 600px;
   padding: 5vw 0;
