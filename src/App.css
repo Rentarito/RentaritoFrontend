@@ -50,7 +50,7 @@ html, body, #root {
   align-items: center;
   background: #0198f1;
   border-radius: 0 0 20px 20px;
-  padding: 3vw 4vw 3vw 4vw;
+  padding: 1vw 4vw 3vw 4vw;
   margin-bottom: 0;
   position: sticky;
   top: 0;
@@ -151,7 +151,7 @@ html, body, #root {
   color: white;
   font-weight: bold;
   font-size: 5vw; min-font-size: 16px; max-font-size: 21px;
-  margin: 1vw auto 0 auto;
+  margin: 0.5vw auto 0 auto;
   width: 92vw;
   max-width: 600px;
   padding: 5vw 0;
