@@ -126,7 +126,7 @@ export default function MachineSelection({ onSelectMachine }) {
                 fps: 10,
                 qrbox: function(viewfinderWidth, viewfinderHeight) {
                   const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                  return { width: minEdge * 0.92, height: minEdge * 0.92 };
+                  return { width: minEdge * 0.92, height: minEdge * 0.95 };
                 }
               },
               (decodedText) => {
