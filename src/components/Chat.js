@@ -68,6 +68,20 @@ export default function Chat({ machineFolder, onBack }) {
     setProbId(null);
   };
 
+  useEffect(() => {
+    window.history.pushState({ chat: true }, "");
+
+    const handlePopState = (event) => {
+      if (onBack) onBack();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
   return (
     <div className="chat-root">
       {/* HEADER IGUALADO A MachineSelection */}
