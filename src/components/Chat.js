@@ -90,7 +90,7 @@ export default function Chat({ machineFolder, onBack }) {
           Chatea con Rentarito
         </div>
         <div
-          src="/assets/logoRentarito.png"
+          src="/assets/rentarito.png"
           alt="Logo Rentaire"
           style={{
             height: "36px",    // igual que el header
