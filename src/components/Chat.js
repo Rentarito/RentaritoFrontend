@@ -175,7 +175,7 @@ export default function Chat({ machineFolder, onBack }) {
           disabled={loading}
           style={{
             flex: "1 1 120px",
-            maxWidth: "140px",      // <-- Más compacto
+            maxWidth: "160px",      // <-- AJUSTA este valor para que el input sea más compacto
             minWidth: "70px",
             marginRight: 8,
           }}
@@ -195,11 +195,11 @@ export default function Chat({ machineFolder, onBack }) {
           }}
         >
           <img
-            src="/assets/refresh.png"
+            src="/assets/refrescarNegro.png"
             alt="Limpiar"
             style={{
-              width: 24,
-              height: 24,
+              width: 26,
+              height: 26,
               objectFit: "contain",
               display: "block"
             }}
@@ -208,7 +208,7 @@ export default function Chat({ machineFolder, onBack }) {
         <button
           className="chat-send"
           style={{
-            marginRight: 14,   // <-- SEPARACIÓN FINAL AL BORDE DERECHO
+            marginRight: 0,
             borderRadius: 16,
             fontWeight: "bold",
             fontSize: "16px",
