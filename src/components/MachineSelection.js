@@ -416,7 +416,15 @@ export default function MachineSelection({ onSelectMachine }) {
                 opacity: input.trim() ? 1 : 0.5,
               }}
               disabled={!input.trim()}
-              onClick={() => onSelectMachine(input)}
+              onClick={() => {
+                // Validación: solo dejar pasar si existe en la lista
+                if (machines.includes(input.trim())) {
+                  setError(null);
+                  onSelectMachine(input);
+                } else {
+                  setError("Selecciona una máquina válida de la lista.");
+                }
+              }}
             >
               Preguntar a Rentarito
             </button>
