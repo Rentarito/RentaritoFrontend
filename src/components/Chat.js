@@ -92,11 +92,18 @@ export default function Chat({ machineFolder, onBack }) {
           onClick={onBack}
           title="Volver"
           style={{
-            width: 42,
-            height: 42,
+            width: 60,          // MÁS ancho
+            height: 60,         // MÁS alto
             display: "flex",
             alignItems: "center",
-            justifyContent: "center"
+            justifyContent: "center",
+            fontSize: 60,       // MÁS grande la flecha
+            lineHeight: 1,
+            background: "none",
+            border: "none",
+            color: "#fff",
+            cursor: "pointer",
+            padding: 0,
           }}
         >
           ⬅
