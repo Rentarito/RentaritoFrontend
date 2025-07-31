@@ -161,7 +161,7 @@ export default function Chat({ machineFolder, onBack }) {
         style={{
           padding: "2vw 5vw 2vw 2vw",    // padding derecho aumentado
           alignItems: "center",
-          gap: 18,                        // más separación entre elementos
+          gap: 8,                        // más separación entre elementos
           display: "flex",
           background: "#f8fbff",
           minHeight: 62,
@@ -176,7 +176,7 @@ export default function Chat({ machineFolder, onBack }) {
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           disabled={loading}
           style={{
-            flex: "1 1 180px",
+            flex: 1,
             maxWidth: "320px",           // <--- más ancho
             minWidth: "120px",
             fontSize: 20,
@@ -184,7 +184,7 @@ export default function Chat({ machineFolder, onBack }) {
             padding: "0 18px",
             borderRadius: 14,
             border: "2px solid #0198f1",
-            marginRight: 10,
+            marginRight: 2,
             boxSizing: "border-box"
           }}
         />
