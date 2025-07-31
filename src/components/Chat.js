@@ -161,8 +161,10 @@ export default function Chat({ machineFolder, onBack }) {
         style={{
           padding: "2vw 4vw 2vw 2vw",
           alignItems: "center",
-          gap: 10,
+          gap: 14,
           display: "flex",
+          background: "#f8fbff", // opcional, por si quieres más claridad
+          minHeight: 62,         // <--- MÁS ALTO
         }}
       >
         <input
@@ -174,10 +176,16 @@ export default function Chat({ machineFolder, onBack }) {
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           disabled={loading}
           style={{
-            flex: "1 1 120px",
-            maxWidth: "160px",      // <-- AJUSTA este valor para que el input sea más compacto
-            minWidth: "70px",
+            flex: "1 1 140px",
+            maxWidth: "200px",      // <--- un poco más ancho
+            minWidth: "100px",
+            fontSize: 19,          // <--- MÁS GRANDE
+            height: 46,            // <--- MÁS ALTO
+            padding: "0 18px",
+            borderRadius: 14,
+            border: "2px solid #0198f1",
             marginRight: 8,
+            boxSizing: "border-box"
           }}
         />
         <button
@@ -191,15 +199,18 @@ export default function Chat({ machineFolder, onBack }) {
             marginRight: 8,
             display: "flex",
             alignItems: "center",
-            cursor: "pointer"
+            cursor: "pointer",
+            height: 46,              // igual que el input
+            width: 46,
+            justifyContent: "center"
           }}
         >
           <img
-            src="/assets/refrescarNegro.png"
+            src="/assets/refresh.png"
             alt="Limpiar"
             style={{
-              width: 26,
-              height: 26,
+              width: 30,             // <--- más grande
+              height: 30,
               objectFit: "contain",
               display: "block"
             }}
@@ -208,18 +219,19 @@ export default function Chat({ machineFolder, onBack }) {
         <button
           className="chat-send"
           style={{
-            marginRight: 0,
+            marginRight: 18,         // más separación final
             borderRadius: 16,
             fontWeight: "bold",
-            fontSize: "16px",
+            fontSize: "20px",        // <--- MÁS GRANDE
             background: "#0198f1",
             color: "#fff",
-            padding: "8px 18px",
+            padding: "10px 28px",    // <--- MÁS ALTO y ancho
             border: "none",
             cursor: loading || !input.trim() ? "not-allowed" : "pointer",
             opacity: loading || !input.trim() ? 0.5 : 1,
             transition: "background 0.2s",
-            minWidth: 64,
+            minWidth: 84,            // un poco más ancho
+            height: 46
           }}
           onClick={sendMessage}
           disabled={loading || !input.trim()}
