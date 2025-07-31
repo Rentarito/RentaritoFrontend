@@ -159,9 +159,9 @@ export default function Chat({ machineFolder, onBack }) {
       <div
         className="chat-input-row"
         style={{
-          padding: "2vw 5vw 2vw 2vw",    // padding derecho aumentado
+          padding: "2vw 5vw 2vw 2vw",
           alignItems: "center",
-          gap: 8,                        // más separación entre elementos
+          gap: 10,
           display: "flex",
           background: "#f8fbff",
           minHeight: 62,
@@ -177,23 +177,21 @@ export default function Chat({ machineFolder, onBack }) {
           disabled={loading}
           style={{
             flex: 1,
-            maxWidth: "320px",           // <--- más ancho
-            minWidth: "120px",
             fontSize: 20,
             height: 46,
             padding: "0 18px",
             borderRadius: 14,
             border: "2px solid #0198f1",
-            marginRight: 2,
+            marginRight: 0,          // <-- Elimina el espacio aquí
             boxSizing: "border-box"
           }}
         />
-        {/* Contenedor de los dos botones para moverlos a la derecha */}
+        {/* Elimina el marginLeft de este contenedor */}
         <div style={{
           display: "flex",
           alignItems: "center",
           gap: 10,
-          marginLeft: 18   // <--- mueve ambos botones a la derecha
+          // marginLeft: 18,  <-- ¡QUÍTALO!
         }}>
           <button
             className="chat-clear"
@@ -212,7 +210,7 @@ export default function Chat({ machineFolder, onBack }) {
             }}
           >
             <img
-              src="/assets/refrescarNegro.png"
+              src="/assets/refresh.png"
               alt="Limpiar"
               style={{
                 width: 30,
