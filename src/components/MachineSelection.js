@@ -70,13 +70,8 @@ export default function MachineSelection({ onSelectMachine }) {
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
-    setError(null); // Quita el error al seleccionar una máquina válida
+    // NO lanzamos onSelectMachine aquí
   };
-
-  // Validación para el botón
-  const isValidMachine = machines.some(
-    (m) => m.trim().toLowerCase() === input.trim().toLowerCase()
-  );
 
   // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
   async function obtenerNombreMaquina(decodedText) {
@@ -182,17 +177,6 @@ export default function MachineSelection({ onSelectMachine }) {
     };
   }, [showQRModal]);
 
-  // ---- HANDLER BOTÓN ----
-  const handleAsk = () => {
-    // Si es máquina válida, lanzamos el chat
-    if (isValidMachine) {
-      setError(null);
-      onSelectMachine(input);
-    } else {
-      setError("Selecciona una máquina válida de la lista.");
-    }
-  };
-
   return (
     <div
       className="machine-selection-container"
@@ -259,6 +243,11 @@ export default function MachineSelection({ onSelectMachine }) {
             }}
           />
         </div>
+
+        {/* Mostrar error del QR si hay */}
+        {error && (
+          <div style={{ color: "red", marginTop: 16 }}>{error}</div>
+        )}
 
         {/* --- MODAL QR --- */}
         {showQRModal && (
@@ -344,10 +333,7 @@ export default function MachineSelection({ onSelectMachine }) {
               ref={inputRef}
               onFocus={() => { setShowDropdown(true); setInputFocused(true); }}
               onBlur={() => { setInputFocused(false); }}
-              onChange={(e) => {
-                setInput(e.target.value.toUpperCase());
-                setError(null); // Borra error al escribir
-              }}
+              onChange={(e) => setInput(e.target.value.toUpperCase())}
               style={{ minWidth: 0 }}
             />
             <button
@@ -391,21 +377,6 @@ export default function MachineSelection({ onSelectMachine }) {
               </div>
             )}
           </div>
-
-          {/* Mensaje de error debajo del input */}
-          {error && (
-            <div style={{
-              color: "red",
-              marginTop: 8,
-              marginBottom: 10,
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: 15,
-              minHeight: 24
-            }}>
-              {error}
-            </div>
-          )}
         </div>
 
         {/* BOTÓN PREGUNTAR ABAJO: solo si el teclado NO está abierto */}
@@ -440,12 +411,20 @@ export default function MachineSelection({ onSelectMachine }) {
                 padding: "16px 0",
                 boxShadow: "0 4px 18px #dde5fa",
                 border: "none",
-                cursor: isValidMachine ? "pointer" : "not-allowed",
+                cursor: input.trim() ? "pointer" : "not-allowed",
                 transition: "background 0.2s",
-                opacity: isValidMachine ? 1 : 0.5,
+                opacity: input.trim() ? 1 : 0.5,
               }}
-              disabled={!isValidMachine}
-              onClick={handleAsk}
+              disabled={!input.trim()}
+              onClick={() => {
+                // Validación: solo dejar pasar si existe en la lista
+                if (machines.includes(input.trim())) {
+                  setError(null);
+                  onSelectMachine(input);
+                } else {
+                  setError("Selecciona una máquina válida de la lista.");
+                }
+              }}
             >
               Preguntar a Rentarito
             </button>
