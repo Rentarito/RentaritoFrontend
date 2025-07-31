@@ -228,12 +228,12 @@ export default function Chat({ machineFolder, onBack }) {
               fontSize: "20px",
               background: "#0198f1",
               color: "#fff",
-              padding: "10px 16px",
+              padding: "10px 10px",
               border: "none",
               cursor: loading || !input.trim() ? "not-allowed" : "pointer",
               opacity: loading || !input.trim() ? 0.5 : 1,
               transition: "background 0.2s",
-              minWidth: 70,
+              minWidth: 50,
               height: 46
             }}
             onClick={sendMessage}
