@@ -206,7 +206,7 @@ export default function Chat({ machineFolder, onBack }) {
           }}
         >
           <img
-            src="/assets/refresh.png"
+            src="/assets/refrescarNegro.png"
             alt="Limpiar"
             style={{
               width: 30,             // <--- más grande
@@ -219,7 +219,7 @@ export default function Chat({ machineFolder, onBack }) {
         <button
           className="chat-send"
           style={{
-            marginRight: 18,         // más separación final
+            marginRight: 15,         // más separación final
             borderRadius: 16,
             fontWeight: "bold",
             fontSize: "20px",        // <--- MÁS GRANDE
