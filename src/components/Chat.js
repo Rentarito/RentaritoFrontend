@@ -23,6 +23,36 @@ export default function Chat({ machineFolder, onBack }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
+  // ---- SOLUCIÓN NAVEGACIÓN ATRÁS ----
+  useEffect(() => {
+    // Guardamos si ya hemos hecho push, para no duplicar entradas en el historial
+    let hasPushed = false;
+
+    // Al entrar al chat, hacemos pushState SOLO si no estamos ya en chat
+    if (window.history.state?.chat !== true) {
+      window.history.pushState({ chat: true }, "");
+      hasPushed = true;
+    }
+
+    const handlePopState = (event) => {
+      // Solo llamamos a onBack si venimos de chat
+      if (window.history.state?.chat === true && onBack) {
+        onBack();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      // Si hicimos pushState al entrar, al salir (desmontar) quitamos el estado (volvemos atrás)
+      if (hasPushed) {
+        window.history.back();
+      }
+    };
+  }, [onBack]);
+  // ---- FIN SOLUCIÓN NAVEGACIÓN ATRÁS ----
+
   const sendMessage = async () => {
     const query = input.trim();
     if (!query) return;
@@ -67,20 +97,6 @@ export default function Chat({ machineFolder, onBack }) {
     setImageUrl(null);
     setProbId(null);
   };
-
-  useEffect(() => {
-    window.history.pushState({ chat: true }, "");
-
-    const handlePopState = (event) => {
-      if (onBack) onBack();
-    };
-
-    window.addEventListener("popstate", handlePopState);
-
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
 
   return (
     <div className="chat-root">
