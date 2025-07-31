@@ -89,22 +89,20 @@ export default function Chat({ machineFolder, onBack }) {
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con Rentarito
         </div>
-        <div
+        <img
           src="/assets/rentarito.png"
           alt="Logo Rentaire"
           style={{
-            height: "36px",    // igual que el header
-            width: "36px",     // cuadrado
+            height: "36px",
+            width: "36px",
             objectFit: "contain",
-            marginRight: "8px", // opcional, si quieres separar del borde derecho
-            marginLeft: "8px",  // separa del texto
-            background: "transparent", // mejor que blanco si el header es de color
-            borderRadius: "8px", // opcional
+            marginRight: "8px",
+            marginLeft: "8px",
+            background: "transparent",
+            borderRadius: "8px",
             boxShadow: "none"
           }}
-        >
-          ⬅
-        </div>
+        />
       </div>
 
       {/* Chat area */}
