@@ -90,15 +90,17 @@ export default function Chat({ machineFolder, onBack }) {
           Chatea con Rentarito
         </div>
         <div
-          src="/assets/logo.png"
-          alt="Logo Rentarito"
+          src="/assets/logoRentarito.png"
+          alt="Logo Rentaire"
           style={{
-            width: 42,
-            height: 42,
-            marginLeft: "2vw",
+            height: "36px",    // igual que el header
+            width: "36px",     // cuadrado
             objectFit: "contain",
-            borderRadius: 10,
-            background: "#fff"
+            marginRight: "8px", // opcional, si quieres separar del borde derecho
+            marginLeft: "8px",  // separa del texto
+            background: "transparent", // mejor que blanco si el header es de color
+            borderRadius: "8px", // opcional
+            boxShadow: "none"
           }}
         >
           ⬅
