@@ -23,35 +23,22 @@ export default function Chat({ machineFolder, onBack }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // ---- SOLUCIÓN NAVEGACIÓN ATRÁS ----
+  // Maneja el botón físico "atrás" del móvil
   useEffect(() => {
-    // Guardamos si ya hemos hecho push, para no duplicar entradas en el historial
-    let hasPushed = false;
+    // Añade un paso en el historial al entrar en el chat
+    window.history.pushState({ fromChat: true }, "");
 
-    // Al entrar al chat, hacemos pushState SOLO si no estamos ya en chat
-    if (window.history.state?.chat !== true) {
-      window.history.pushState({ chat: true }, "");
-      hasPushed = true;
-    }
-
-    const handlePopState = (event) => {
-      // Solo llamamos a onBack si venimos de chat
-      if (window.history.state?.chat === true && onBack) {
-        onBack();
-      }
+    const handlePopState = () => {
+      if (onBack) onBack();
     };
 
     window.addEventListener("popstate", handlePopState);
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      // Si hicimos pushState al entrar, al salir (desmontar) quitamos el estado (volvemos atrás)
-      if (hasPushed) {
-        window.history.back();
-      }
+      // No hacemos window.history.back() aquí, para evitar loops.
     };
   }, [onBack]);
-  // ---- FIN SOLUCIÓN NAVEGACIÓN ATRÁS ----
 
   const sendMessage = async () => {
     const query = input.trim();
