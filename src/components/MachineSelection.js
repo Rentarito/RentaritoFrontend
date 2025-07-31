@@ -190,26 +190,27 @@ export default function MachineSelection({ onSelectMachine }) {
         minHeight: "100vh",
       }}
     >
-      <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ width: 42 }} />  {/* Espacio vacío a la izquierda para centrar el título */}
-        <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-          Chatea con Rentarito
+      <div className="selector-card" style={{ minHeight: "100vh" }}>
+        <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ width: 42 }} /> {/* Espacio a la izquierda, por simetría visual */}
+          <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
+            Chatea con Rentarito
+          </div>
+          <img
+            src="/assets/rentarito.png"
+            alt="Logo Rentaire"
+            style={{
+              height: "36px",
+              width: "36px",
+              objectFit: "contain",
+              marginRight: "8px",
+              marginLeft: "8px",
+              background: "transparent",
+              borderRadius: "8px",
+              boxShadow: "none"
+            }}
+          />
         </div>
-        <img
-          src="/assets/rentarito.png"
-          alt="Logo Rentaire"
-          style={{
-            height: "36px",
-            width: "36px",
-            objectFit: "contain",
-            marginRight: "8px",
-            marginLeft: "8px",
-            background: "transparent",
-            borderRadius: "8px",
-            boxShadow: "none"
-          }}
-        />
-      </div>
 
         {/* Botón QR */}
         <div
