@@ -70,9 +70,10 @@ export default function MachineSelection({ onSelectMachine }) {
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
-    // NO lanzamos onSelectMachine aquí
+    if (inputRef.current) {
+      inputRef.current.blur(); // <-- Forzar a perder el foco para que no se vuelva a abrir el dropdown
+    }
   };
-
   // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
   async function obtenerNombreMaquina(decodedText) {
     try {
