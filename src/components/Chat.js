@@ -86,15 +86,19 @@ export default function Chat({ machineFolder, onBack }) {
         >
           ⬅
         </button>
-        <div className="title-header">
+        <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con Rentarito
         </div>
         <div
+          src="/assets/logo.png"
+          alt="Logo Rentarito"
           style={{
             width: 42,
             height: 42,
             marginLeft: "2vw",
-            visibility: "hidden"
+            objectFit: "contain",
+            borderRadius: 10,
+            background: "#fff"
           }}
         >
           ⬅
