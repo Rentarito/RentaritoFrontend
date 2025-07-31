@@ -92,21 +92,27 @@ export default function Chat({ machineFolder, onBack }) {
           onClick={onBack}
           title="Volver"
           style={{
-            width: 60,          // MÁS ancho
-            height: 60,         // MÁS alto
+            width: 56,
+            height: 56,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 60,       // MÁS grande la flecha
-            lineHeight: 1,
             background: "none",
             border: "none",
-            color: "#fff",
             cursor: "pointer",
             padding: 0,
           }}
         >
-          ⬅
+          <img
+            src="/assets/flecha.png"  // o .png si tienes PNG
+            alt="Volver"
+            style={{
+              width: 40,      // Ajusta el tamaño aquí
+              height: 40,
+              objectFit: "contain",
+              display: "block"
+            }}
+          />
         </button>
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con Rentarito
