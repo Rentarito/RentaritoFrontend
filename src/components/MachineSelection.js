@@ -192,7 +192,7 @@ export default function MachineSelection({ onSelectMachine }) {
     >
       <div className="selector-card" style={{ minHeight: "100vh" }}>
         <div className="header-selection">
-          <div className="title-header">Chatea con Rentaire</div>
+          <div className="title-header">Chatea con Rentarito</div>
         </div>
 
         {/* Botón QR */}
