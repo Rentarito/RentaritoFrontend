@@ -23,22 +23,20 @@ export default function Chat({ machineFolder, onBack }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // ---- SOLO ESTE USEEFFECT AJUSTADO ----
+  // SOLUCIÓN: Siempre al pulsar atrás, vuelve a selección
   useEffect(() => {
-    window.history.pushState({ chat: true }, "");
-
-    const handlePopState = () => {
+    const handlePopState = (event) => {
       if (onBack) onBack();
+      window.history.pushState(null, ""); // Evita salir de la app en pulsaciones sucesivas
     };
 
+    window.history.pushState(null, "");
     window.addEventListener("popstate", handlePopState);
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      // NO poner window.history.back() aquí
     };
   }, [onBack]);
-  // ---- FIN USEEFFECT ----
 
   const sendMessage = async () => {
     const query = input.trim();
