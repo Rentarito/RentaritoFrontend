@@ -161,7 +161,6 @@ export default function Chat({ machineFolder, onBack }) {
         style={{
           padding: "2vw 5vw 2vw 2vw",
           alignItems: "center",
-          gap: 8,
           display: "flex",
           background: "#f8fbff",
           minHeight: 62,
@@ -177,7 +176,7 @@ export default function Chat({ machineFolder, onBack }) {
           disabled={loading}
           style={{
             flex: "1 1 0",
-            maxWidth: 225,           // <--- Ajusta este valor según pantalla
+            maxWidth: 225,
             fontSize: 20,
             height: 46,
             padding: "0 18px",
@@ -205,7 +204,8 @@ export default function Chat({ machineFolder, onBack }) {
               cursor: "pointer",
               height: 46,
               width: 46,
-              justifyContent: "center"
+              justifyContent: "center",
+              marginLeft: 8   // <-- ¡Este es el truco! El mismo espacio que el gap interno
             }}
           >
             <img
