@@ -104,10 +104,10 @@ export default function Chat({ machineFolder, onBack }) {
           }}
         >
           <img
-            src="/assets/flecha.png"  // o .png si tienes PNG
+            src="/assets/flecha.png"
             alt="Volver"
             style={{
-              width: 40,      // Ajusta el tamaño aquí
+              width: 40,
               height: 40,
               objectFit: "contain",
               display: "block"
@@ -156,7 +156,14 @@ export default function Chat({ machineFolder, onBack }) {
       </div>
 
       {/* Input */}
-      <div className="chat-input-row">
+      <div
+        className="chat-input-row"
+        style={{
+          padding: "2vw 4vw 2vw 2vw", // más espacio a la derecha
+          alignItems: "center",
+          gap: 10, // separación entre botones
+        }}
+      >
         <input
           className="chat-input"
           type="text"
@@ -166,11 +173,46 @@ export default function Chat({ machineFolder, onBack }) {
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           disabled={loading}
         />
-        <button className="chat-clear" onClick={clearChat} title="Limpiar conversación">
-          🔄
+        <button
+          className="chat-clear"
+          onClick={clearChat}
+          title="Limpiar conversación"
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            marginRight: 8,
+            display: "flex",
+            alignItems: "center",
+            cursor: "pointer"
+          }}
+        >
+          <img
+            src="/assets/refrescarNegro.png"
+            alt="Limpiar"
+            style={{
+              width: 26,
+              height: 26,
+              objectFit: "contain",
+              display: "block"
+            }}
+          />
         </button>
         <button
           className="chat-send"
+          style={{
+            marginRight: 6, // separación con el borde derecho
+            borderRadius: 16,
+            fontWeight: "bold",
+            fontSize: "16px",
+            background: "#0198f1",
+            color: "#fff",
+            padding: "8px 18px",
+            border: "none",
+            cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+            opacity: loading || !input.trim() ? 0.5 : 1,
+            transition: "background 0.2s"
+          }}
           onClick={sendMessage}
           disabled={loading || !input.trim()}
         >
