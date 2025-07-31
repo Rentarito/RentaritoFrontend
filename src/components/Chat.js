@@ -23,10 +23,9 @@ export default function Chat({ machineFolder, onBack }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // Maneja el botón físico "atrás" del móvil
+  // ---- SOLO ESTE USEEFFECT AJUSTADO ----
   useEffect(() => {
-    // Añade un paso en el historial al entrar en el chat
-    window.history.pushState({ fromChat: true }, "");
+    window.history.pushState({ chat: true }, "");
 
     const handlePopState = () => {
       if (onBack) onBack();
@@ -36,9 +35,10 @@ export default function Chat({ machineFolder, onBack }) {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-      // No hacemos window.history.back() aquí, para evitar loops.
+      // NO poner window.history.back() aquí
     };
   }, [onBack]);
+  // ---- FIN USEEFFECT ----
 
   const sendMessage = async () => {
     const query = input.trim();
