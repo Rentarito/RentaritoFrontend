@@ -190,7 +190,7 @@ export default function Chat({ machineFolder, onBack }) {
         <div style={{
           display: "flex",
           alignItems: "center",
-          gap: 10
+          gap: 8
         }}>
           <button
             className="chat-clear"
