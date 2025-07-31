@@ -159,9 +159,10 @@ export default function Chat({ machineFolder, onBack }) {
       <div
         className="chat-input-row"
         style={{
-          padding: "2vw 4vw 2vw 2vw", // más espacio a la derecha
+          padding: "2vw 4vw 2vw 2vw",
           alignItems: "center",
-          gap: 10, // separación entre botones
+          gap: 10,
+          display: "flex",
         }}
       >
         <input
@@ -172,6 +173,12 @@ export default function Chat({ machineFolder, onBack }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           disabled={loading}
+          style={{
+            flex: "1 1 120px",
+            maxWidth: "160px",      // <-- AJUSTA este valor para que el input sea más compacto
+            minWidth: "70px",
+            marginRight: 8,
+          }}
         />
         <button
           className="chat-clear"
@@ -188,7 +195,7 @@ export default function Chat({ machineFolder, onBack }) {
           }}
         >
           <img
-            src="/assets/refrescarNegro.png"
+            src="/assets/refresh.png"
             alt="Limpiar"
             style={{
               width: 26,
@@ -201,7 +208,7 @@ export default function Chat({ machineFolder, onBack }) {
         <button
           className="chat-send"
           style={{
-            marginRight: 6, // separación con el borde derecho
+            marginRight: 0,
             borderRadius: 16,
             fontWeight: "bold",
             fontSize: "16px",
@@ -211,7 +218,8 @@ export default function Chat({ machineFolder, onBack }) {
             border: "none",
             cursor: loading || !input.trim() ? "not-allowed" : "pointer",
             opacity: loading || !input.trim() ? 0.5 : 1,
-            transition: "background 0.2s"
+            transition: "background 0.2s",
+            minWidth: 64,
           }}
           onClick={sendMessage}
           disabled={loading || !input.trim()}
