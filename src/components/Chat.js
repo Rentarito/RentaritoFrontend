@@ -161,7 +161,7 @@ export default function Chat({ machineFolder, onBack }) {
         style={{
           padding: "2vw 5vw 2vw 2vw",
           alignItems: "center",
-          gap: 10,
+          gap: 8,
           display: "flex",
           background: "#f8fbff",
           minHeight: 62,
@@ -176,22 +176,21 @@ export default function Chat({ machineFolder, onBack }) {
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           disabled={loading}
           style={{
-            flex: 1,
+            flex: "1 1 0",
+            maxWidth: 260,           // <--- Ajusta este valor según pantalla
             fontSize: 20,
             height: 46,
             padding: "0 18px",
             borderRadius: 14,
             border: "2px solid #0198f1",
-            marginRight: 0,          // <-- Elimina el espacio aquí
+            marginRight: 0,
             boxSizing: "border-box"
           }}
         />
-        {/* Elimina el marginLeft de este contenedor */}
         <div style={{
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          // marginLeft: 18,  <-- ¡QUÍTALO!
+          gap: 10
         }}>
           <button
             className="chat-clear"
@@ -210,7 +209,7 @@ export default function Chat({ machineFolder, onBack }) {
             }}
           >
             <img
-              src="/assets/refresh.png"
+              src="/assets/refrescarNegro.png"
               alt="Limpiar"
               style={{
                 width: 30,
