@@ -177,7 +177,7 @@ export default function Chat({ machineFolder, onBack }) {
           disabled={loading}
           style={{
             flex: "1 1 0",
-            maxWidth: 260,           // <--- Ajusta este valor según pantalla
+            maxWidth: 200,           // <--- Ajusta este valor según pantalla
             fontSize: 20,
             height: 46,
             padding: "0 18px",
