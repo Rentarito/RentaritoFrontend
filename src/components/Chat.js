@@ -115,7 +115,7 @@ export default function Chat({ machineFolder, onBack }) {
           />
         </button>
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-          Chatea con RentAIrito
+          Chatea con <span className="cambria-text">RentAIrito</span>
         </div>
         <img
           src="/assets/rentarito.png"
