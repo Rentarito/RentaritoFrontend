@@ -426,7 +426,7 @@ export default function MachineSelection({ onSelectMachine }) {
                 }
               }}
             >
-              Preguntar a <span className="cambria-text">RentAIrito</span>
+              Preguntar a <span className="cambria-text"> RentAIrito</span>
             </button>
           </div>
         )}
