@@ -7,7 +7,7 @@ export default function Chat({ machineFolder, onBack }) {
   const [chat, setChat] = useState([
     {
       role: "assistant",
-      content: `¡Hola, soy Rentarito! Bienvenido al asistente virtual de Rentaire.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+      content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -74,7 +74,7 @@ export default function Chat({ machineFolder, onBack }) {
     setChat([
       {
         role: "assistant",
-        content: `¡Hola, soy Rentarito! Bienvenido al asistente virtual de Rentaire.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+        content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
       },
     ]);
     setInput("");
@@ -115,7 +115,7 @@ export default function Chat({ machineFolder, onBack }) {
           />
         </button>
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-          Chatea con Rentarito
+          Chatea con RentAIrito
         </div>
         <img
           src="/assets/rentarito.png"
@@ -205,7 +205,7 @@ export default function Chat({ machineFolder, onBack }) {
               height: 46,
               width: 46,
               justifyContent: "center",
-              marginLeft: 8   // <-- ¡Este es el truco! El mismo espacio que el gap interno
+              marginLeft: 8   
             }}
           >
             <img

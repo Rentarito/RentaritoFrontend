@@ -193,7 +193,7 @@ export default function MachineSelection({ onSelectMachine }) {
         <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
           <div style={{ width: 42 }} /> {/* Espacio a la izquierda, por simetría visual */}
           <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-            Chatea con Rentarito
+            Chatea con RentAIrito
           </div>
           <img
             src="/assets/rentarito.png"
@@ -426,7 +426,7 @@ export default function MachineSelection({ onSelectMachine }) {
                 }
               }}
             >
-              Preguntar a Rentarito
+              Preguntar a RentAIrito
             </button>
           </div>
         )}
