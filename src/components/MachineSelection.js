@@ -121,24 +121,23 @@ export default function MachineSelection({ onSelectMachine }) {
 
       Html5Qrcode.getCameras()
         .then((devices) => {
-          const backCamera =
-            devices.find((d) =>
-              d.label.toLowerCase().includes("back")
-            ) || devices[0];
-          if (!backCamera) {
+          // Comprobamos que haya al menos una cámara
+          if (!devices || devices.length === 0) {
             setError("No se detectó ninguna cámara.");
             setShowQRModal(false);
             return;
           }
+
           html5QrCode
             .start(
-              backCamera.id,
+              // 👉 Pedimos específicamente la cámara trasera
+              { facingMode: "environment" },
               {
                 fps: 10,
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                qrbox: function (viewfinderWidth, viewfinderHeight) {
                   const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                   return { width: minEdge * 0.80, height: minEdge * 0.98 };
-                }
+                },
               },
               (decodedText) => {
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
