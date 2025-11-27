@@ -4,6 +4,11 @@ import { fetchMachines } from "../helpers/api";
 import "../App.css";
 import { Html5Qrcode } from "html5-qrcode";
 
+// URL del backend (la misma que usas en helpers/api.js para /machines y /ask)
+const BACKEND_BASE_URL =
+  process.env.REACT_APP_BACKEND_URL ||
+  "https://rentaritobackend-swcw.onrender.com";
+
 export default function MachineSelection({ onSelectMachine }) {
   const [machines, setMachines] = useState([]);
   const [input, setInput] = useState("");
@@ -20,7 +25,9 @@ export default function MachineSelection({ onSelectMachine }) {
   // Detectar teclado abierto
   // ------------------------------
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const initialHeightRef = useRef(typeof window !== "undefined" ? window.innerHeight : 0);
+  const initialHeightRef = useRef(
+    typeof window !== "undefined" ? window.innerHeight : 0
+  );
 
   useEffect(() => {
     const threshold = 120; // px; puedes ajustar este valor si lo necesitas
@@ -77,27 +84,33 @@ export default function MachineSelection({ onSelectMachine }) {
   async function obtenerNombreMaquina(decodedText) {
     try {
       const codigo = decodedText.trim();
-      const jsonParam = JSON.stringify({ rentalElement: codigo });
-      const urlParam = encodeURIComponent(jsonParam);
-      const url = `https://businesscentral.rentaire.es:25043/api/route/GetRentalElementFleetCode?p_RentalElement=${urlParam}`;
+      if (!codigo) return "No encontrada";
 
-      const response = await fetch(url);
-      const text = await response.text();
+      const resp = await fetch(`${BACKEND_BASE_URL}/rental-element-name`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: codigo }),
+      });
 
-      // Intenta parsear como JSON
-      let json = {};
-      try {
-        json = JSON.parse(text);
-      } catch (e) {
-        return "No encontrada";
+      if (!resp.ok) {
+        console.error(
+          "Error respuesta backend nombre máquina:",
+          resp.status
+        );
+        return "Error consultando máquina";
       }
 
-      if (json.Result) {
-        return json.Result;
+      const data = await resp.json();
+      if (data.result) {
+        // Aquí llegará "DUMPER", "EXCAVADORA", etc.
+        return data.result;
       } else {
         return "No encontrada";
       }
     } catch (err) {
+      console.error("Error consultando nombre de máquina:", err);
       return "Error consultando máquina";
     }
   }
@@ -135,8 +148,11 @@ export default function MachineSelection({ onSelectMachine }) {
               {
                 fps: 10,
                 qrbox: function (viewfinderWidth, viewfinderHeight) {
-                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                  return { width: minEdge * 0.80, height: minEdge * 0.98 };
+                  const minEdge = Math.min(
+                    viewfinderWidth,
+                    viewfinderHeight
+                  );
+                  return { width: minEdge * 0.8, height: minEdge * 0.98 };
                 },
               },
               (decodedText) => {
@@ -189,8 +205,12 @@ export default function MachineSelection({ onSelectMachine }) {
       }}
     >
       <div className="selector-card" style={{ minHeight: "100vh" }}>
-        <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ width: 42 }} /> {/* Espacio a la izquierda, por simetría visual */}
+        <div
+          className="header-selection"
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <div style={{ width: 42 }} />{" "}
+          {/* Espacio a la izquierda, por simetría visual */}
           <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
             Chatea con <span className="cambria-text">RentAIrito</span>
           </div>
@@ -205,7 +225,7 @@ export default function MachineSelection({ onSelectMachine }) {
               marginLeft: "8px",
               background: "transparent",
               borderRadius: "8px",
-              boxShadow: "none"
+              boxShadow: "none",
             }}
           />
         </div>
@@ -244,9 +264,7 @@ export default function MachineSelection({ onSelectMachine }) {
         </div>
 
         {/* Mostrar error del QR si hay */}
-        {error && (
-          <div style={{ color: "red", marginTop: 16 }}>{error}</div>
-        )}
+        {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
 
         {/* --- MODAL QR --- */}
         {showQRModal && (
@@ -314,7 +332,14 @@ export default function MachineSelection({ onSelectMachine }) {
                   overflow: "hidden",
                 }}
               />
-              <div style={{ color: "#0198f1", marginTop: 12, textAlign: "center", fontWeight: "bold" }}>
+              <div
+                style={{
+                  color: "#0198f1",
+                  marginTop: 12,
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
                 Apunta con la cámara al QR
               </div>
             </div>
@@ -330,8 +355,13 @@ export default function MachineSelection({ onSelectMachine }) {
               placeholder="Escriba o seleccione máquina"
               value={input}
               ref={inputRef}
-              onFocus={() => { setShowDropdown(true); setInputFocused(true); }}
-              onBlur={() => { setInputFocused(false); }}
+              onFocus={() => {
+                setShowDropdown(true);
+                setInputFocused(true);
+              }}
+              onBlur={() => {
+                setInputFocused(false);
+              }}
               onChange={(e) => setInput(e.target.value.toUpperCase())}
               style={{ minWidth: 0 }}
             />
