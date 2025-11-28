@@ -212,7 +212,10 @@ export default function MachineSelection({ onSelectMachine }) {
           <div style={{ width: 42 }} />{" "}
           {/* Espacio a la izquierda, por simetría visual */}
           <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-            Chatea con <span className="cambria-text">RentAIrito</span>
+            Chatea con{" "}
+            <span className="brand">
+              RentA<span className="brand-i">I</span>rito
+            </span>
           </div>
           <img
             src="/assets/rentarito.png"

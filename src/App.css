@@ -427,3 +427,14 @@ html, body, #root {
 .cambria-text {
   font-family: Cambria, "Times New Roman", Times, serif !important;
 }
+
+/* Marca "RentAIrito" estilo referencia header */
+.brand {
+  font-family: inherit !important;              /* FuturaLightBT (la fuente global) */
+  font-weight: normal !important;
+}
+
+.brand-i {
+  font-family: Cambria, "Times New Roman", Times, serif !important;
+  font-weight: normal !important;
+}

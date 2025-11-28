@@ -115,7 +115,10 @@ export default function Chat({ machineFolder, onBack }) {
           />
         </button>
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-          Chatea con <span className="cambria-text">RentAIrito</span>
+          Chatea con{" "}
+          <span className="brand">
+            RentA<span className="brand-i">I</span>rito
+          </span>
         </div>
         <img
           src="/assets/rentarito.png"
@@ -205,7 +208,7 @@ export default function Chat({ machineFolder, onBack }) {
               height: 46,
               width: 46,
               justifyContent: "center",
-              marginLeft: 8   
+              marginLeft: 8
             }}
           >
             <img
