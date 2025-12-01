@@ -26,8 +26,14 @@ export default function Chat({ machineFolder, onBack }) {
   // SOLUCIÓN: Siempre al pulsar atrás, vuelve a selección
   useEffect(() => {
     const handlePopState = (event) => {
-      if (onBack) onBack();
-      window.history.pushState(null, ""); // Evita salir de la app en pulsaciones sucesivas
+      // Opcional: avisar a React
+      if (typeof onBack === "function") {
+        onBack();
+      }
+      // 🔁 Igual que en el botón: recargar página
+      if (typeof window !== "undefined" && window.location) {
+        window.location.reload();
+      }
     };
 
     window.history.pushState(null, "");
@@ -88,21 +94,30 @@ export default function Chat({ machineFolder, onBack }) {
       {/* HEADER IGUALADO A MachineSelection */}
       <div className="header-selection">
         <button
-          className="chat-back"
-          onClick={onBack}
-          title="Volver"
-          style={{
-            width: 56,
-            height: 56,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-          }}
-        >
+        className="chat-back"
+        onClick={() => {
+          // Por si en App haces algo con onBack
+          if (typeof onBack === "function") {
+            onBack();
+          }
+          // 🔁 Recargar toda la página para volver al estado “recién abierta”
+          if (typeof window !== "undefined" && window.location) {
+            window.location.reload();
+          }
+        }}
+        title="Volver"
+        style={{
+          width: 56,
+          height: 56,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+        }}
+      >
           <img
             src="/assets/flecha.png"
             alt="Volver"
