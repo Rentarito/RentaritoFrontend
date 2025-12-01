@@ -35,15 +35,24 @@ export default function MachineSelection({ onSelectMachine }) {
   }, []);
   useEffect(() => {
     const threshold = 120; // px; puedes ajustar este valor si lo necesitas
+
     const handleResize = () => {
       if (typeof window === "undefined") return;
+
       const heightDiff = initialHeightRef.current - window.innerHeight;
-      setKeyboardOpen(heightDiff > threshold);
+      const isOpen = heightDiff > threshold;
+
+      setKeyboardOpen(isOpen);
+
+      // Si el teclado se ha cerrado (o el alto vuelve casi a normal),
+      // forzamos scroll al principio para que el encabezado no se quede oculto
+      if (!isOpen) {
+        window.scrollTo(0, 0);
+      }
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-    // eslint-disable-next-line
   }, []);
 
   // ------------------------------
@@ -367,6 +376,10 @@ export default function MachineSelection({ onSelectMachine }) {
               }}
               onBlur={() => {
                 setInputFocused(false);
+                if (typeof window !== "undefined") {
+                  // Al cerrar el teclado / perder foco, volvemos arriba
+                  window.scrollTo(0, 0);
+                }
               }}
               onChange={(e) => setInput(e.target.value.toUpperCase())}
               style={{ minWidth: 0 }}
