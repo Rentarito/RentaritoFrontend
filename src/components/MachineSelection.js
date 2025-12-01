@@ -128,6 +128,30 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }
 
+  // 👉 Función común para decidir qué hacer con la máquina escaneada
+  function handleMachineFromQr(nombreMaquinaCrudo) {
+    const nombreNormalizado = (nombreMaquinaCrudo || "").toUpperCase().trim();
+
+    if (!nombreNormalizado) {
+      setError("No se ha encontrado una máquina para ese QR.");
+      return;
+    }
+
+    // Buscamos la máquina en la lista de manera case-insensitive
+    const machineFromList = machines.find(
+      (m) => m.toUpperCase().trim() === nombreNormalizado
+    );
+
+    if (machineFromList) {
+      // ✅ Máquina válida: ir DIRECTO al chat
+      setError(null);
+      onSelectMachine(machineFromList);
+    } else {
+      // ❌ No está en la lista: dejamos escrito y pedimos que revise
+      setInput(nombreNormalizado);
+      setError("Selecciona una máquina válida de la lista.");
+    }
+  }
   
   // ------------------------------ 
   // Función global para QR nativo (Android/iOS app principal)
@@ -139,20 +163,17 @@ export default function MachineSelection({ onSelectMachine }) {
 
       try {
         const nombreMaquina = await obtenerNombreMaquina(decodedText);
-
-        // Rellenamos el input usando React (para que no se borre)
-        setInput((nombreMaquina || "").toUpperCase());
-        setShowDropdown(false); // o true si quieres abrir el desplegable
+        handleMachineFromQr(nombreMaquina);
       } catch (e) {
         console.error("Error procesando QR nativo", e);
+        setError("Error procesando el QR.");
       }
     };
 
-    // Limpieza si el componente se desmonta
     return () => {
       delete window.setQrFromNative;
     };
-  }, []);
+  }, [machines, onSelectMachine]);
 
   // ---- QR modal logic ----
   useEffect(() => {
@@ -195,8 +216,6 @@ export default function MachineSelection({ onSelectMachine }) {
               },
               (decodedText) => {
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
-                  const nombre = (nombreMaquina || "").trim();
-
                   // Cerramos el modal y el escáner SÍ o SÍ
                   setShowQRModal(false);
                   html5QrCode
@@ -205,24 +224,8 @@ export default function MachineSelection({ onSelectMachine }) {
                     .catch(() => {});
                   qrCodeScannerRef.current = null;
 
-                  if (!nombre) {
-                    // Backend no ha devuelto una máquina válida
-                    setError("No se ha encontrado una máquina para ese QR.");
-                    return;
-                  }
-
-                  // ¿Es una máquina de la lista?
-                  const esValida = machines.includes(nombre);
-
-                  if (esValida) {
-                    // ✅ Ir directamente al chat
-                    setError(null);
-                    onSelectMachine(nombre);
-                  } else {
-                    // ❌ No está en la lista: dejamos el nombre escrito y avisamos
-                    setInput(nombre);
-                    setError("Selecciona una máquina válida de la lista.");
-                  }
+                  // 👉 Reutilizamos la función común
+                  handleMachineFromQr(nombreMaquina);
                 });
               },
               (errorMessage) => {
