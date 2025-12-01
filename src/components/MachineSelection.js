@@ -28,7 +28,11 @@ export default function MachineSelection({ onSelectMachine }) {
   const initialHeightRef = useRef(
     typeof window !== "undefined" ? window.innerHeight : 0
   );
-
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
   useEffect(() => {
     const threshold = 120; // px; puedes ajustar este valor si lo necesitas
     const handleResize = () => {
