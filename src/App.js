@@ -31,11 +31,14 @@ export default function App() {
 
   // 3. El resto del render
   return (
-    <div style={{ minHeight: "100vh", background: "#f2f5fa" }}>
+    <div className="rentarito-app-root">
       {!selectedMachine ? (
         <MachineSelection onSelectMachine={setSelectedMachine} />
       ) : (
-        <Chat machineFolder={selectedMachine} onBack={() => setSelectedMachine(null)} />
+        <Chat
+          machineFolder={selectedMachine}
+          onBack={() => setSelectedMachine(null)}
+        />
       )}
     </div>
   );

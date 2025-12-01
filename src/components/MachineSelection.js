@@ -199,12 +199,11 @@ export default function MachineSelection({ onSelectMachine }) {
         backgroundImage: "url('/assets/fondoapp.jpg')",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
-        backgroundAttachment: "fixed",
         backgroundSize: "cover",
-        minHeight: "100vh",
+        // 👈 quitamos backgroundAttachment y minHeight 100vh
       }}
     >
-      <div className="selector-card" style={{ minHeight: "100vh" }}>
+      <div className="selector-card">
         <div
           className="header-selection"
           style={{ display: "flex", alignItems: "center" }}

@@ -15,31 +15,40 @@ html, body, #root {
   padding: 0;
   font-size: 16px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* =========================
-   SELECCIÓN DE MÁQUINA
-========================= */
-/*.machine-selection-container {
-  min-height: 100vh;
+/* Contenedor raíz del micro-chatbot */
+.rentarito-app-root {
   height: 100vh;
   width: 100vw;
   background: #f2f5fa;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  box-sizing: border-box;
+
+  /* 🔽 Deja hueco para el header de la app principal
+     Ajusta este valor (64px) al alto REAL de ese header */
+  padding-top: 64px;
+}
+
+.machine-selection-container {
+  flex: 1;                       /* ocupa el espacio libre bajo el padding-top */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   align-items: stretch;
-  padding: 0;
-}*/
+  justify-content: flex-start;
+}
 
 .selector-card {
   border-radius: 0 0 24px 24px;
   box-shadow: none;
   padding: 0;
   min-width: 0;
-  width: 100vw;
-  height: 100vh;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
+  flex: 1;                       /* alto = espacio disponible, sin forzar 100vh */
   display: flex;
   flex-direction: column;
   align-items: stretch;
