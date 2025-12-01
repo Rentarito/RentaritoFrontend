@@ -222,7 +222,7 @@ html, body, #root {
 
   /* 👇 Empuja todo el contenido un poco hacia abajo
      Ajusta el valor (por ejemplo 16, 24, 32) según lo que mida el header nativo */
-  padding-top: 32px;
+  padding-top: 64px;
 }
 
 .chat-header {
