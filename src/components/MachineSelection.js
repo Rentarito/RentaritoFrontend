@@ -275,7 +275,19 @@ export default function MachineSelection({ onSelectMachine }) {
         <div
           className="btn-escanear-qr"
           tabIndex={0}
-          onClick={() => setShowQRModal(true)}
+          onClick={() => {
+            // 1️⃣ Si la app nativa ha expuesto su función, usamos SIEMPRE el escáner nativo
+            if (
+              typeof window !== "undefined" &&
+              typeof window.openNativeQrScanner === "function"
+            ) {
+              window.openNativeQrScanner();
+            } else {
+              // 2️⃣ Si estamos en un navegador normal (o aún no tienen la función),
+              // usamos el escáner HTML5 (Html5Qrcode) como hasta ahora
+              setShowQRModal(true);
+            }
+          }}
           style={{
             marginTop: "10vw",
             display: "flex",
