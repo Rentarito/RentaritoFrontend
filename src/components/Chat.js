@@ -26,6 +26,7 @@ export default function Chat({ machineFolder, onBack }) {
     }
   }, []);
 
+  // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
@@ -59,10 +60,12 @@ export default function Chat({ machineFolder, onBack }) {
     setImageUrl(null);
 
     try {
-      const history = [...chat, { role: "user", content: query }].map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      const history = [...chat, { role: "user", content: query }].map(
+        (msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })
+      );
 
       const res = await fetchManualAnswer({
         folder: machineFolder,
@@ -74,7 +77,9 @@ export default function Chat({ machineFolder, onBack }) {
 
       setChat((old) => [...old, { role: "assistant", content: res.answer }]);
       setProbId(res.probId || null);
-      setImageUrl(res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null);
+      setImageUrl(
+        res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null
+      );
     } catch (err) {
       setError("❌ Error: " + (err.message || "No se pudo conectar"));
     }
