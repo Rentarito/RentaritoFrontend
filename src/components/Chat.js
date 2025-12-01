@@ -96,150 +96,160 @@ export default function Chat({ machineFolder, onBack }) {
 
   return (
     <div
-      className="chat-root"
+      className="machine-selection-container"
       style={{
-        paddingTop: 240, // 🔴 AJUSTA ESTE VALOR: 16, 24, 32... hasta que quede justo debajo del header nativo
+        backgroundImage: "url('/assets/fondoapp.jpg')",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center center",
+        backgroundSize: "cover",
       }}
     >
-      {/* HEADER IGUALADO A MachineSelection, SIN FLECHA */}
-      <div
-        className="header-selection"
-        style={{ display: "flex", alignItems: "center" }}
-      >
-        <div style={{ width: 42 }} />{" "}
-        {/* Espacio a la izquierda, por simetría visual */}
-        <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
-          Chatea con{" "}
-          <span className="brand">
-            RentA<span className="brand-i">I</span>rito
-          </span>
-        </div>
-        <img
-          src="/assets/rentarito.png"
-          alt="Logo Rentaire"
-          style={{
-            height: "36px",
-            width: "36px",
-            objectFit: "contain",
-            marginRight: "8px",
-            marginLeft: "8px",
-            background: "transparent",
-            borderRadius: "8px",
-            boxShadow: "none",
-          }}
-        />
-      </div>
-
-      {/* Chat area */}
-      <div className="chat-area">
-        <div className="chat-messages">
-          {chat.map((msg, i) => (
-            <ChatBubble key={i} message={msg.content} isUser={msg.role === "user"} />
-          ))}
-          {loading && <ChatBubble message="Pensando..." isUser={false} />}
-          {error && <ChatBubble message={error} isUser={false} />}
-          {imageUrl && (
-            <div className="chat-image-container">
-              <img
-                src={imageUrl}
-                alt="Adjunto bot"
-                className="chat-image"
-                onClick={() => window.open(imageUrl, "_blank")}
-              />
-            </div>
-          )}
-          <div ref={scrollRef} />
-        </div>
-      </div>
-
-      {/* Input */}
-      <div
-        className="chat-input-row"
-        style={{
-          padding: "2vw 5vw 2vw 2vw",
-          alignItems: "center",
-          display: "flex",
-          background: "#f8fbff",
-          minHeight: 62,
-        }}
-      >
-        <input
-          className="chat-input"
-          type="text"
-          placeholder="Escribe aquí..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          disabled={loading}
-          style={{
-            flex: "1 1 0",
-            maxWidth: 225,
-            fontSize: 20,
-            height: 46,
-            padding: "0 18px",
-            borderRadius: 14,
-            border: "2px solid #0198f1",
-            marginRight: 0,
-            boxSizing: "border-box",
-          }}
-        />
+      {/* Reutilizamos el mismo contenedor que en MachineSelection */}
+      <div className="selector-card chat-root">
+        {/* HEADER IGUAL AL DE MachineSelection, SIN FLECHA */}
         <div
+          className="header-selection"
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <div style={{ width: 42 }} />{" "}
+          {/* Espacio a la izquierda, por simetría visual */}
+          <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
+            Chatea con{" "}
+            <span className="brand">
+              RentA<span className="brand-i">I</span>rito
+            </span>
+          </div>
+          <img
+            src="/assets/rentarito.png"
+            alt="Logo Rentaire"
+            style={{
+              height: "36px",
+              width: "36px",
+              objectFit: "contain",
+              marginRight: "8px",
+              marginLeft: "8px",
+              background: "transparent",
+              borderRadius: "8px",
+              boxShadow: "none",
+            }}
+          />
+        </div>
+
+        {/* ÁREA DE CHAT – SOLO ESTO TIENE SCROLL */}
+        <div className="chat-area">
+          <div className="chat-messages">
+            {chat.map((msg, i) => (
+              <ChatBubble
+                key={i}
+                message={msg.content}
+                isUser={msg.role === "user"}
+              />
+            ))}
+            {loading && <ChatBubble message="Pensando..." isUser={false} />}
+            {error && <ChatBubble message={error} isUser={false} />}
+            {imageUrl && (
+              <div className="chat-image-container">
+                <img
+                  src={imageUrl}
+                  alt="Adjunto bot"
+                  className="chat-image"
+                  onClick={() => window.open(imageUrl, "_blank")}
+                />
+              </div>
+            )}
+            <div ref={scrollRef} />
+          </div>
+        </div>
+
+        {/* Input fijo abajo */}
+        <div
+          className="chat-input-row"
           style={{
-            display: "flex",
+            padding: "2vw 5vw 2vw 2vw",
             alignItems: "center",
-            gap: 8,
+            display: "flex",
+            background: "#f8fbff",
+            minHeight: 62,
           }}
         >
-          <button
-            className="chat-clear"
-            onClick={clearChat}
-            title="Limpiar conversación"
+          <input
+            className="chat-input"
+            type="text"
+            placeholder="Escribe aquí..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            disabled={loading}
             style={{
-              background: "none",
-              border: "none",
-              padding: 0,
+              flex: "1 1 0",
+              maxWidth: 225,
+              fontSize: 20,
+              height: 46,
+              padding: "0 18px",
+              borderRadius: 14,
+              border: "2px solid #0198f1",
+              marginRight: 0,
+              boxSizing: "border-box",
+            }}
+          />
+          <div
+            style={{
               display: "flex",
               alignItems: "center",
-              cursor: "pointer",
-              height: 46,
-              width: 46,
-              justifyContent: "center",
-              marginLeft: 8,
+              gap: 8,
             }}
           >
-            <img
-              src="/assets/refrescarNegro.png"
-              alt="Limpiar"
+            <button
+              className="chat-clear"
+              onClick={clearChat}
+              title="Limpiar conversación"
               style={{
-                width: 30,
-                height: 30,
-                objectFit: "contain",
-                display: "block",
+                background: "none",
+                border: "none",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                height: 46,
+                width: 46,
+                justifyContent: "center",
+                marginLeft: 8,
               }}
-            />
-          </button>
-          <button
-            className="chat-send"
-            style={{
-              marginRight: 0,
-              borderRadius: 16,
-              fontWeight: "bold",
-              fontSize: "20px",
-              background: "#0198f1",
-              color: "#fff",
-              padding: "10px 10px",
-              border: "none",
-              cursor: loading || !input.trim() ? "not-allowed" : "pointer",
-              opacity: loading || !input.trim() ? 0.5 : 1,
-              transition: "background 0.2s",
-              minWidth: 50,
-              height: 46,
-            }}
-            onClick={sendMessage}
-            disabled={loading || !input.trim()}
-          >
-            Enviar
-          </button>
+            >
+              <img
+                src="/assets/refrescarNegro.png"
+                alt="Limpiar"
+                style={{
+                  width: 30,
+                  height: 30,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
+            </button>
+            <button
+              className="chat-send"
+              style={{
+                marginRight: 0,
+                borderRadius: 16,
+                fontWeight: "bold",
+                fontSize: "20px",
+                background: "#0198f1",
+                color: "#fff",
+                padding: "10px 10px",
+                border: "none",
+                cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+                opacity: loading || !input.trim() ? 0.5 : 1,
+                transition: "background 0.2s",
+                minWidth: 50,
+                height: 46,
+              }}
+              onClick={sendMessage}
+              disabled={loading || !input.trim()}
+            >
+              Enviar
+            </button>
+          </div>
         </div>
       </div>
     </div>
