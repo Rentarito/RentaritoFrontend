@@ -182,7 +182,6 @@ export default function MachineSelection({ onSelectMachine }) {
 
           html5QrCode
             .start(
-              // 👉 Pedimos específicamente la cámara trasera
               { facingMode: "environment" },
               {
                 fps: 10,
@@ -196,13 +195,34 @@ export default function MachineSelection({ onSelectMachine }) {
               },
               (decodedText) => {
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
-                  setInput(nombreMaquina || "");
+                  const nombre = (nombreMaquina || "").trim();
+
+                  // Cerramos el modal y el escáner SÍ o SÍ
                   setShowQRModal(false);
                   html5QrCode
                     .stop()
                     .then(() => html5QrCode.clear())
                     .catch(() => {});
                   qrCodeScannerRef.current = null;
+
+                  if (!nombre) {
+                    // Backend no ha devuelto una máquina válida
+                    setError("No se ha encontrado una máquina para ese QR.");
+                    return;
+                  }
+
+                  // ¿Es una máquina de la lista?
+                  const esValida = machines.includes(nombre);
+
+                  if (esValida) {
+                    // ✅ Ir directamente al chat
+                    setError(null);
+                    onSelectMachine(nombre);
+                  } else {
+                    // ❌ No está en la lista: dejamos el nombre escrito y avisamos
+                    setInput(nombre);
+                    setError("Selecciona una máquina válida de la lista.");
+                  }
                 });
               },
               (errorMessage) => {
@@ -229,7 +249,7 @@ export default function MachineSelection({ onSelectMachine }) {
         qrCodeScannerRef.current = null;
       }
     };
-  }, [showQRModal]);
+  }, [showQRModal, machines, onSelectMachine]);
 
   return (
     <div
