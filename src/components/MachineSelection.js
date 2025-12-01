@@ -128,6 +128,32 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }
 
+  
+  // ------------------------------ 
+  // Función global para QR nativo (Android/iOS app principal)
+  // ------------------------------ 
+  useEffect(() => {
+    // La app nativa llamará a: window.setQrFromNative('<texto QR>');
+    window.setQrFromNative = async (decodedText) => {
+      if (!decodedText) return;
+
+      try {
+        const nombreMaquina = await obtenerNombreMaquina(decodedText);
+
+        // Rellenamos el input usando React (para que no se borre)
+        setInput((nombreMaquina || "").toUpperCase());
+        setShowDropdown(false); // o true si quieres abrir el desplegable
+      } catch (e) {
+        console.error("Error procesando QR nativo", e);
+      }
+    };
+
+    // Limpieza si el componente se desmonta
+    return () => {
+      delete window.setQrFromNative;
+    };
+  }, []);
+
   // ---- QR modal logic ----
   useEffect(() => {
     const regionId = "qr-modal-reader";
