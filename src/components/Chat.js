@@ -30,14 +30,12 @@ export default function Chat({ machineFolder, onBack }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // Seguir manejando el botón físico "atrás" (por si aplica en el WebView)
+  // Manejar botón físico "atrás"
   useEffect(() => {
     const handlePopState = (event) => {
-      // Opcional: avisar a React
       if (typeof onBack === "function") {
         onBack();
       }
-      // Recargar página para volver al estado “recién abierta”
       if (typeof window !== "undefined" && window.location) {
         window.location.reload();
       }
@@ -155,7 +153,7 @@ export default function Chat({ machineFolder, onBack }) {
         style={{
           padding: "2vw 5vw 2vw 2vw",
           alignItems: "center",
-          display: "lex",
+          display: "flex",
           background: "#f8fbff",
           minHeight: 62,
         }}

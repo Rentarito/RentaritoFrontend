@@ -216,10 +216,13 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   background: #f2f5fa;
-  padding: 0;
   margin: 0;
   border-radius: 0;
   box-shadow: none;
+
+  /* 👇 Empuja todo el contenido un poco hacia abajo
+     Ajusta el valor (por ejemplo 16, 24, 32) según lo que mida el header nativo */
+  padding-top: 16px;
 }
 
 .chat-header {
