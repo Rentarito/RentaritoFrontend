@@ -30,7 +30,7 @@ export default function Chat({ machineFolder, onBack }) {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // Manejar botón físico "atrás"
+  // Botón físico "atrás" de Android: volvemos y recargamos
   useEffect(() => {
     const handlePopState = (event) => {
       if (typeof onBack === "function") {
@@ -95,7 +95,12 @@ export default function Chat({ machineFolder, onBack }) {
   };
 
   return (
-    <div className="chat-root">
+    <div
+      className="chat-root"
+      style={{
+        paddingTop: 24, // 🔴 AJUSTA ESTE VALOR: 16, 24, 32... hasta que quede justo debajo del header nativo
+      }}
+    >
       {/* HEADER IGUALADO A MachineSelection, SIN FLECHA */}
       <div
         className="header-selection"
