@@ -19,18 +19,25 @@ export default function Chat({ machineFolder, onBack }) {
   const scrollRef = useRef();
   const sessionId = getSessionId();
 
+  // Al entrar en el chat, nos aseguramos de estar arriba del todo
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // SOLUCIÓN: Siempre al pulsar atrás, vuelve a selección
+  // Seguir manejando el botón físico "atrás" (por si aplica en el WebView)
   useEffect(() => {
     const handlePopState = (event) => {
       // Opcional: avisar a React
       if (typeof onBack === "function") {
         onBack();
       }
-      // 🔁 Igual que en el botón: recargar página
+      // Recargar página para volver al estado “recién abierta”
       if (typeof window !== "undefined" && window.location) {
         window.location.reload();
       }
@@ -91,44 +98,13 @@ export default function Chat({ machineFolder, onBack }) {
 
   return (
     <div className="chat-root">
-      {/* HEADER IGUALADO A MachineSelection */}
-      <div className="header-selection">
-        <button
-        className="chat-back"
-        onClick={() => {
-          // Por si en App haces algo con onBack
-          if (typeof onBack === "function") {
-            onBack();
-          }
-          // 🔁 Recargar toda la página para volver al estado “recién abierta”
-          if (typeof window !== "undefined" && window.location) {
-            window.location.reload();
-          }
-        }}
-        title="Volver"
-        style={{
-          width: 56,
-          height: 56,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          padding: 0,
-        }}
+      {/* HEADER IGUALADO A MachineSelection, SIN FLECHA */}
+      <div
+        className="header-selection"
+        style={{ display: "flex", alignItems: "center" }}
       >
-          <img
-            src="/assets/flecha.png"
-            alt="Volver"
-            style={{
-              width: 40,
-              height: 40,
-              objectFit: "contain",
-              display: "block"
-            }}
-          />
-        </button>
+        <div style={{ width: 42 }} />{" "}
+        {/* Espacio a la izquierda, por simetría visual */}
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con{" "}
           <span className="brand">
@@ -146,7 +122,7 @@ export default function Chat({ machineFolder, onBack }) {
             marginLeft: "8px",
             background: "transparent",
             borderRadius: "8px",
-            boxShadow: "none"
+            boxShadow: "none",
           }}
         />
       </div>
@@ -179,7 +155,7 @@ export default function Chat({ machineFolder, onBack }) {
         style={{
           padding: "2vw 5vw 2vw 2vw",
           alignItems: "center",
-          display: "flex",
+          display: "lex",
           background: "#f8fbff",
           minHeight: 62,
         }}
@@ -201,14 +177,16 @@ export default function Chat({ machineFolder, onBack }) {
             borderRadius: 14,
             border: "2px solid #0198f1",
             marginRight: 0,
-            boxSizing: "border-box"
+            boxSizing: "border-box",
           }}
         />
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8
-        }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <button
             className="chat-clear"
             onClick={clearChat}
@@ -223,7 +201,7 @@ export default function Chat({ machineFolder, onBack }) {
               height: 46,
               width: 46,
               justifyContent: "center",
-              marginLeft: 8
+              marginLeft: 8,
             }}
           >
             <img
@@ -233,7 +211,7 @@ export default function Chat({ machineFolder, onBack }) {
                 width: 30,
                 height: 30,
                 objectFit: "contain",
-                display: "block"
+                display: "block",
               }}
             />
           </button>
@@ -252,7 +230,7 @@ export default function Chat({ machineFolder, onBack }) {
               opacity: loading || !input.trim() ? 0.5 : 1,
               transition: "background 0.2s",
               minWidth: 50,
-              height: 46
+              height: 46,
             }}
             onClick={sendMessage}
             disabled={loading || !input.trim()}
