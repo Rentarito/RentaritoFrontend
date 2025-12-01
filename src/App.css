@@ -28,7 +28,7 @@ html, body, #root {
   box-sizing: border-box;
 
   /* 👇 hueco para el header nativo */
-  padding-top: 64px; /* o la altura real del header nativo */
+  padding-top: 0px; /* o la altura real del header nativo */
 }
 
 .machine-selection-container {
