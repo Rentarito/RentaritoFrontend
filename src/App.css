@@ -29,7 +29,7 @@ html, body, #root {
 
   /* 🔽 Deja hueco para el header de la app principal
      Ajusta este valor (64px) al alto REAL de ese header */
-  padding-top: 6px;
+  padding-top: 0px;
 }
 
 .machine-selection-container {
