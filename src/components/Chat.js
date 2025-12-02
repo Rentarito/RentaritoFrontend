@@ -36,7 +36,7 @@ export default function Chat({ machineFolder, onBack }) {
     // 👉 Ajusta SOLO estos dos valores si hiciera falta
     const IOS_OFFSET = 80;     // espacio en iOS
     const ANDROID_OFFSET = 40; // espacio en Android
-    const DEFAULT_OFFSET = 24;
+    const DEFAULT_OFFSET = 40;
 
     let offset = DEFAULT_OFFSET;
     if (isIOS) offset = IOS_OFFSET;
