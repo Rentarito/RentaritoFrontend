@@ -3,8 +3,6 @@ import ChatBubble from "./ChatBubble";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchManualAnswer } from "../helpers/api";
 
-const HEADER_OFFSET_PX = 55; // 👈 ajusta 0, 8, 12... hasta que se vea perfecto
-
 export default function Chat({ machineFolder, onBack }) {
   const [chat, setChat] = useState([
     {
@@ -21,19 +19,16 @@ export default function Chat({ machineFolder, onBack }) {
   const scrollRef = useRef();
   const sessionId = getSessionId();
 
-  // Al entrar en el chat, nos aseguramos de estar arriba del todo
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
     }
   }, []);
 
-  // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
-  // Botón físico "atrás" de Android: volvemos y recargamos
   useEffect(() => {
     const handlePopState = () => {
       if (typeof onBack === "function") {
@@ -46,7 +41,6 @@ export default function Chat({ machineFolder, onBack }) {
 
     window.history.pushState(null, "");
     window.addEventListener("popstate", handlePopState);
-
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
@@ -62,12 +56,10 @@ export default function Chat({ machineFolder, onBack }) {
     setImageUrl(null);
 
     try {
-      const history = [...chat, { role: "user", content: query }].map(
-        (msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })
-      );
+      const history = [...chat, { role: "user", content: query }].map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
 
       const res = await fetchManualAnswer({
         folder: machineFolder,
@@ -79,9 +71,7 @@ export default function Chat({ machineFolder, onBack }) {
 
       setChat((old) => [...old, { role: "assistant", content: res.answer }]);
       setProbId(res.probId || null);
-      setImageUrl(
-        res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null
-      );
+      setImageUrl(res.imageUrls?.[0] || null);
     } catch (err) {
       setError("❌ Error: " + (err.message || "No se pudo conectar"));
     }
@@ -103,25 +93,28 @@ export default function Chat({ machineFolder, onBack }) {
 
   return (
     <div
-      className="chat-root"
+      className="chat-screen"
       style={{
         backgroundImage: "url('/assets/fondoapp.jpg')",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
         backgroundSize: "cover",
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "hidden",
       }}
     >
-      {/* 👇 Espaciador para bajar un pelín todo el contenido
-          (evita que el header azul se quede tapado por el header nativo) */}
-      <div style={{ height: HEADER_OFFSET_PX, flexShrink: 0 }} />
-
-      {/* HEADER IGUAL AL DE MachineSelection, SIN FLECHA */}
+      {/* HEADER — igual al de MachineSelection */}
       <div
         className="header-selection"
-        style={{ display: "flex", alignItems: "center" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexShrink: 0,
+        }}
       >
-        <div style={{ width: 42 }} />{" "}
-        {/* Espacio a la izquierda, por simetría visual */}
+        <div style={{ width: 42 }} />
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con{" "}
           <span className="brand">
@@ -144,33 +137,36 @@ export default function Chat({ machineFolder, onBack }) {
         />
       </div>
 
-      {/* ZONA CENTRAL DEL CHAT – esta es la que tiene scroll */}
-      <div className="chat-area">
-        <div className="chat-messages">
-          {chat.map((msg, i) => (
-            <ChatBubble
-              key={i}
-              message={msg.content}
-              isUser={msg.role === "user"}
+      {/* CHAT SCROLLABLE */}
+      <div
+        className="chat-scrollable"
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "3vw 2vw",
+          background: "#eaf2fb",
+          boxSizing: "border-box",
+        }}
+      >
+        {chat.map((msg, i) => (
+          <ChatBubble key={i} message={msg.content} isUser={msg.role === "user"} />
+        ))}
+        {loading && <ChatBubble message="Pensando..." isUser={false} />}
+        {error && <ChatBubble message={error} isUser={false} />}
+        {imageUrl && (
+          <div className="chat-image-container">
+            <img
+              src={imageUrl}
+              alt="Adjunto bot"
+              className="chat-image"
+              onClick={() => window.open(imageUrl, "_blank")}
             />
-          ))}
-          {loading && <ChatBubble message="Pensando..." isUser={false} />}
-          {error && <ChatBubble message={error} isUser={false} />}
-          {imageUrl && (
-            <div className="chat-image-container">
-              <img
-                src={imageUrl}
-                alt="Adjunto bot"
-                className="chat-image"
-                onClick={() => window.open(imageUrl, "_blank")}
-              />
-            </div>
-          )}
-          <div ref={scrollRef} />
-        </div>
+          </div>
+        )}
+        <div ref={scrollRef} />
       </div>
 
-      {/* BARRA DE INPUT – diseño antiguo restaurado */}
+      {/* INPUT ABAJO — diseño original */}
       <div
         className="chat-input-row"
         style={{
@@ -179,6 +175,7 @@ export default function Chat({ machineFolder, onBack }) {
           display: "flex",
           background: "#f8fbff",
           minHeight: 62,
+          flexShrink: 0,
         }}
       >
         <input
