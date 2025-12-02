@@ -3,7 +3,7 @@ import ChatBubble from "./ChatBubble";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchManualAnswer } from "../helpers/api";
 
-const HEADER_OFFSET_PX = 32; // 👈 ajusta 0, 8, 12... hasta que se vea perfecto
+const HEADER_OFFSET_PX = 80; // 👈 ajusta 0, 8, 12... hasta que se vea perfecto
 
 export default function Chat({ machineFolder, onBack }) {
   const [chat, setChat] = useState([
