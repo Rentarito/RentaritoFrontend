@@ -31,6 +31,11 @@ html, body, #root {
   padding-top: 0px; /* o la altura real del header nativo */
 }
 
+/* ================
+   MACHINE SELECTION
+   (NO TOCAR)
+================ */
+
 .machine-selection-container {
   flex: 1;
   display: flex;
@@ -196,7 +201,8 @@ html, body, #root {
 }
 
 /* =========================
-         CHAT
+           CHAT
+   (3 ZONAS: HEADER, CHAT, INPUT)
 ========================= */
 
 .chat-root {
@@ -237,7 +243,7 @@ html, body, #root {
   display: flex;
   align-items: center;
   flex-shrink: 0;           /* 👈 No se encoge, queda fija abajo */
-  position: relative;       /* Ya no sticky */
+  position: relative;
 }
 
 .chat-input {
@@ -285,9 +291,8 @@ html, body, #root {
   cursor: not-allowed;
 }
 
-/* Burbujas de chat (respetamos lo que ya tenías) */
-.chat-bubble-user,
-.chat-bubble-bot {
+/* Burbujas de chat */
+.chat-bubble-user, .chat-bubble-bot {
   max-width: 85vw;
   border-radius: 18px;
   padding: 3vw 4vw;
@@ -313,7 +318,6 @@ html, body, #root {
   border: 2px solid #0198f1;
 }
 
-/* Imagen que devuelve el bot */
 .chat-image-container {
   display: flex;
   justify-content: flex-start;
