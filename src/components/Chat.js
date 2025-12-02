@@ -19,16 +19,45 @@ export default function Chat({ machineFolder, onBack }) {
   const scrollRef = useRef();
   const sessionId = getSessionId();
 
+  // Offset dinámico para que el header no quede detrás del header nativo
+  const [headerOffset, setHeaderOffset] = useState(24);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const ua =
+      (typeof navigator !== "undefined" &&
+        (navigator.userAgent || navigator.vendor || "")) ||
+      "";
+
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
+    const isAndroid = /Android/.test(ua);
+
+    // 👉 Ajusta SOLO estos dos valores si hiciera falta
+    const IOS_OFFSET = 80;     // espacio en iOS
+    const ANDROID_OFFSET = 50; // espacio en Android
+    const DEFAULT_OFFSET = 24;
+
+    let offset = DEFAULT_OFFSET;
+    if (isIOS) offset = IOS_OFFSET;
+    else if (isAndroid) offset = ANDROID_OFFSET;
+
+    setHeaderOffset(offset);
+  }, []);
+
+  // Al entrar en el chat, nos aseguramos de estar arriba del todo
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
     }
   }, []);
 
+  // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
 
+  // Botón físico "atrás" de Android: volvemos y recargamos
   useEffect(() => {
     const handlePopState = () => {
       if (typeof onBack === "function") {
@@ -41,6 +70,7 @@ export default function Chat({ machineFolder, onBack }) {
 
     window.history.pushState(null, "");
     window.addEventListener("popstate", handlePopState);
+
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
@@ -56,10 +86,12 @@ export default function Chat({ machineFolder, onBack }) {
     setImageUrl(null);
 
     try {
-      const history = [...chat, { role: "user", content: query }].map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      const history = [...chat, { role: "user", content: query }].map(
+        (msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })
+      );
 
       const res = await fetchManualAnswer({
         folder: machineFolder,
@@ -71,7 +103,9 @@ export default function Chat({ machineFolder, onBack }) {
 
       setChat((old) => [...old, { role: "assistant", content: res.answer }]);
       setProbId(res.probId || null);
-      setImageUrl(res.imageUrls?.[0] || null);
+      setImageUrl(
+        res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null
+      );
     } catch (err) {
       setError("❌ Error: " + (err.message || "No se pudo conectar"));
     }
@@ -93,28 +127,24 @@ export default function Chat({ machineFolder, onBack }) {
 
   return (
     <div
-      className="chat-screen"
+      className="chat-root"
       style={{
         backgroundImage: "url('/assets/fondoapp.jpg')",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
         backgroundSize: "cover",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        overflow: "hidden",
       }}
     >
-      {/* HEADER — igual al de MachineSelection */}
+      {/* Espaciador superior: se calcula distinto en iOS / Android */}
+      <div style={{ height: headerOffset, flexShrink: 0 }} />
+
+      {/* HEADER IGUAL AL DE MachineSelection, SIN FLECHA */}
       <div
         className="header-selection"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexShrink: 0,
-        }}
+        style={{ display: "flex", alignItems: "center" }}
       >
-        <div style={{ width: 42 }} />
+        <div style={{ width: 42 }} />{" "}
+        {/* Espacio a la izquierda, por simetría visual */}
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con{" "}
           <span className="brand">
@@ -137,36 +167,33 @@ export default function Chat({ machineFolder, onBack }) {
         />
       </div>
 
-      {/* CHAT SCROLLABLE */}
-      <div
-        className="chat-scrollable"
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "3vw 2vw",
-          background: "#eaf2fb",
-          boxSizing: "border-box",
-        }}
-      >
-        {chat.map((msg, i) => (
-          <ChatBubble key={i} message={msg.content} isUser={msg.role === "user"} />
-        ))}
-        {loading && <ChatBubble message="Pensando..." isUser={false} />}
-        {error && <ChatBubble message={error} isUser={false} />}
-        {imageUrl && (
-          <div className="chat-image-container">
-            <img
-              src={imageUrl}
-              alt="Adjunto bot"
-              className="chat-image"
-              onClick={() => window.open(imageUrl, "_blank")}
+      {/* ZONA CENTRAL DEL CHAT – esta es la que tiene scroll */}
+      <div className="chat-area">
+        <div className="chat-messages">
+          {chat.map((msg, i) => (
+            <ChatBubble
+              key={i}
+              message={msg.content}
+              isUser={msg.role === "user"}
             />
-          </div>
-        )}
-        <div ref={scrollRef} />
+          ))}
+          {loading && <ChatBubble message="Pensando..." isUser={false} />}
+          {error && <ChatBubble message={error} isUser={false} />}
+          {imageUrl && (
+            <div className="chat-image-container">
+              <img
+                src={imageUrl}
+                alt="Adjunto bot"
+                className="chat-image"
+                onClick={() => window.open(imageUrl, "_blank")}
+              />
+            </div>
+          )}
+          <div ref={scrollRef} />
+        </div>
       </div>
 
-      {/* INPUT ABAJO — diseño original */}
+      {/* BARRA DE INPUT – diseño que te gustaba */}
       <div
         className="chat-input-row"
         style={{
@@ -175,7 +202,6 @@ export default function Chat({ machineFolder, onBack }) {
           display: "flex",
           background: "#f8fbff",
           minHeight: 62,
-          flexShrink: 0,
         }}
       >
         <input
