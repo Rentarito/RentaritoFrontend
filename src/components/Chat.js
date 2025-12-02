@@ -209,15 +209,6 @@ export default function Chat({ machineFolder, onBack }) {
           type="text"
           placeholder="Escribe aquí..."
           value={input}
-          onFocus={() => {
-            // Esperamos un pelín a que se abra el teclado y cambie el alto
-            setTimeout(() => {
-              scrollRef.current?.scrollIntoView({
-                behavior: "smooth",
-                block: "end",
-              });
-            }, 100);
-          }}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           disabled={loading}
