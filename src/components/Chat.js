@@ -7,7 +7,7 @@ export default function Chat({ machineFolder, onBack }) {
   const [chat, setChat] = useState([
     {
       role: "assistant",
-      content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+      content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -116,7 +116,7 @@ export default function Chat({ machineFolder, onBack }) {
     setChat([
       {
         role: "assistant",
-        content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+        content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
       },
     ]);
     setInput("");
