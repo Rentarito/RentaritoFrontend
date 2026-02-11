@@ -1,54 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatBubble from "./ChatBubble";
 import getSessionId from "../helpers/sessionIdHelper";
-import { fetchManualAnswer, fetchHvoStatus } from "../helpers/api";
-
-// ✅ claves sessionStorage (mismas que en MachineSelection)
-const ACCESS_MODE_KEY = "rentarito_access_mode"; // "qr" | "list"
-const MACHINE_NO_KEY = "rentarito_machine_no";  // ARBMCHNo
-
-function safeGetSession(key, fallback = "") {
-  try {
-    const v = sessionStorage.getItem(key);
-    return v == null ? fallback : v;
-  } catch {
-    return fallback;
-  }
-}
+import { fetchManualAnswer } from "../helpers/api";
 
 export default function Chat({ machineFolder, onBack }) {
-  const accessMode = safeGetSession(ACCESS_MODE_KEY, "list"); // "qr"|"list"
-  const machineNo = safeGetSession(MACHINE_NO_KEY, "");       // QR completo (ARBMCHNo)
-
-  const buildInitialChat = () => {
-    const base = [
-      {
-        role: "assistant",
-        content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
-      },
-    ];
-
-    // ✅ Mensaje adicional al entrar por LISTA
-    if (accessMode === "list") {
-      base.push({
-        role: "assistant",
-        content:
-          "Si quiere consultar si su máquina puede utilizar el aceite HVO, escriba el nombre completo de la maquina que aparece en un lateral o vuelva al menú anterior y escanee el código QR de la máquina.",
-      });
-    }
-
-    return base;
-  };
-
-  const [chat, setChat] = useState(buildInitialChat);
+  const [chat, setChat] = useState([
+    {
+      role: "assistant",
+      content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+    },
+  ]);
   const [input, setInput] = useState("");
   const [probId, setProbId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [imageUrl, setImageUrl] = useState(null);
-
-  // ✅ guardamos el mensaje HVO para reponerlo si el usuario limpia chat
-  const [hvoMessage, setHvoMessage] = useState(null);
 
   const scrollRef = useRef();
   const sessionId = getSessionId();
@@ -67,8 +33,9 @@ export default function Chat({ machineFolder, onBack }) {
     const isIOS = /iPad|iPhone|iPod/.test(ua);
     const isAndroid = /Android/.test(ua);
 
-    const IOS_OFFSET = 80;
-    const ANDROID_OFFSET = 40;
+    // 👉 Ajusta SOLO estos dos valores si hiciera falta
+    const IOS_OFFSET = 80;     // espacio en iOS
+    const ANDROID_OFFSET = 40; // espacio en Android
     const DEFAULT_OFFSET = 40;
 
     let offset = DEFAULT_OFFSET;
@@ -78,12 +45,14 @@ export default function Chat({ machineFolder, onBack }) {
     setHeaderOffset(offset);
   }, []);
 
+  // Al entrar en el chat, nos aseguramos de estar arriba del todo
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
     }
   }, []);
 
+  // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat, imageUrl]);
@@ -107,35 +76,6 @@ export default function Chat({ machineFolder, onBack }) {
     };
   }, [onBack]);
 
-  // ✅ NUEVO: si vienes por QR, consulta HVO automáticamente y añade mensaje
-  useEffect(() => {
-    let cancelled = false;
-
-    async function run() {
-      if (accessMode !== "qr") return;
-      const mn = String(machineNo || "").trim();
-      if (!mn) return;
-
-      try {
-        const res = await fetchHvoStatus(mn);
-        if (cancelled) return;
-
-        if (res?.message) {
-          setHvoMessage(res.message);
-          setChat((old) => [...old, { role: "assistant", content: res.message }]);
-        }
-      } catch {
-        // si falla, no reventamos el chat
-      }
-    }
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const sendMessage = async () => {
     const query = input.trim();
     if (!query) return;
@@ -146,10 +86,12 @@ export default function Chat({ machineFolder, onBack }) {
     setImageUrl(null);
 
     try {
-      const history = [...chat, { role: "user", content: query }].map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      const history = [...chat, { role: "user", content: query }].map(
+        (msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })
+      );
 
       const res = await fetchManualAnswer({
         folder: machineFolder,
@@ -161,7 +103,9 @@ export default function Chat({ machineFolder, onBack }) {
 
       setChat((old) => [...old, { role: "assistant", content: res.answer }]);
       setProbId(res.probId || null);
-      setImageUrl(res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null);
+      setImageUrl(
+        res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null
+      );
     } catch (err) {
       setError("❌ Error: " + (err.message || "No se pudo conectar"));
     }
@@ -169,14 +113,12 @@ export default function Chat({ machineFolder, onBack }) {
   };
 
   const clearChat = () => {
-    const base = buildInitialChat();
-
-    // ✅ si ya teníamos mensaje HVO (QR), lo reponemos
-    if (accessMode === "qr" && hvoMessage) {
-      base.push({ role: "assistant", content: hvoMessage });
-    }
-
-    setChat(base);
+    setChat([
+      {
+        role: "assistant",
+        content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+      },
+    ]);
     setInput("");
     setError(null);
     setImageUrl(null);
@@ -193,10 +135,16 @@ export default function Chat({ machineFolder, onBack }) {
         backgroundSize: "cover",
       }}
     >
+      {/* Espaciador superior: se calcula distinto en iOS / Android */}
       <div style={{ height: headerOffset, flexShrink: 0 }} />
 
-      <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ width: 42 }} />
+      {/* HEADER IGUAL AL DE MachineSelection, SIN FLECHA */}
+      <div
+        className="header-selection"
+        style={{ display: "flex", alignItems: "center" }}
+      >
+        <div style={{ width: 42 }} />{" "}
+        {/* Espacio a la izquierda, por simetría visual */}
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con{" "}
           <span className="brand">
@@ -219,10 +167,15 @@ export default function Chat({ machineFolder, onBack }) {
         />
       </div>
 
+      {/* ZONA CENTRAL DEL CHAT – esta es la que tiene scroll */}
       <div className="chat-area">
         <div className="chat-messages">
           {chat.map((msg, i) => (
-            <ChatBubble key={i} message={msg.content} isUser={msg.role === "user"} />
+            <ChatBubble
+              key={i}
+              message={msg.content}
+              isUser={msg.role === "user"}
+            />
           ))}
           {loading && <ChatBubble message="Pensando..." isUser={false} />}
           {error && <ChatBubble message={error} isUser={false} />}
@@ -240,6 +193,7 @@ export default function Chat({ machineFolder, onBack }) {
         </div>
       </div>
 
+      {/* BARRA DE INPUT – diseño que te gustaba */}
       <div
         className="chat-input-row"
         style={{
@@ -270,7 +224,13 @@ export default function Chat({ machineFolder, onBack }) {
             boxSizing: "border-box",
           }}
         />
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           <button
             className="chat-clear"
             onClick={clearChat}

@@ -9,22 +9,6 @@ const BACKEND_BASE_URL =
   process.env.REACT_APP_BACKEND_URL ||
   "https://rentaritobackend-swcw.onrender.com";
 
-// ✅ NUEVO: claves para pasar info al Chat sin romper App.js
-const ACCESS_MODE_KEY = "rentarito_access_mode"; // "qr" | "list"
-const MACHINE_NO_KEY = "rentarito_machine_no";  // ARBMCHNo (QR completo)
-
-function safeSetSession(key, value) {
-  try {
-    sessionStorage.setItem(key, value);
-  } catch {}
-}
-
-function safeRemoveSession(key) {
-  try {
-    sessionStorage.removeItem(key);
-  } catch {}
-}
-
 export default function MachineSelection({ onSelectMachine }) {
   const [machines, setMachines] = useState([]);
   const [input, setInput] = useState("");
@@ -50,7 +34,7 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }, []);
   useEffect(() => {
-    const threshold = 120; // px
+    const threshold = 120; // px; puedes ajustar este valor si lo necesitas
 
     const handleResize = () => {
       if (typeof window === "undefined") return;
@@ -60,6 +44,8 @@ export default function MachineSelection({ onSelectMachine }) {
 
       setKeyboardOpen(isOpen);
 
+      // Si el teclado se ha cerrado (o el alto vuelve casi a normal),
+      // forzamos scroll al principio para que el encabezado no se quede oculto
       if (!isOpen) {
         window.scrollTo(0, 0);
       }
@@ -68,6 +54,7 @@ export default function MachineSelection({ onSelectMachine }) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
   // ------------------------------
 
   useEffect(() => {
@@ -99,13 +86,14 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }, [input, machines]);
 
-  // Solo pone el nombre en el input, no lanza el chat automáticamente
+  // Nuevo: Solo pone el nombre en el input, no lanza el chat automáticamente
   const handleSelect = (machine) => {
     setInput(machine);
     setShowDropdown(false);
+    // NO lanzamos onSelectMachine aquí
   };
 
-  // ---------------------- FETCH QR ----------------------
+  // ---------------------- FUNCION DE FETCH Y LOGS QR ----------------------
   async function obtenerNombreMaquina(decodedText) {
     try {
       const codigo = decodedText.trim();
@@ -113,17 +101,23 @@ export default function MachineSelection({ onSelectMachine }) {
 
       const resp = await fetch(`${BACKEND_BASE_URL}/rental-element-name`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ code: codigo }),
       });
 
       if (!resp.ok) {
-        console.error("Error respuesta backend nombre máquina:", resp.status);
+        console.error(
+          "Error respuesta backend nombre máquina:",
+          resp.status
+        );
         return "Error consultando máquina";
       }
 
       const data = await resp.json();
       if (data.result) {
+        // Aquí llegará "DUMPER", "EXCAVADORA", etc.
         return data.result;
       } else {
         return "No encontrada";
@@ -134,51 +128,42 @@ export default function MachineSelection({ onSelectMachine }) {
     }
   }
 
-  // 👉 Decide qué hacer con la máquina escaneada
-  // ✅ CAMBIO MÍNIMO: acepta también decodedText para guardar ARBMCHNo en sessionStorage
-  function handleMachineFromQr(nombreMaquinaCrudo, decodedText) {
+  // 👉 Función común para decidir qué hacer con la máquina escaneada
+  function handleMachineFromQr(nombreMaquinaCrudo) {
     const nombreNormalizado = (nombreMaquinaCrudo || "").toUpperCase().trim();
-    const machineNo = (decodedText || "").trim();
 
-    // Si BC devuelve vacío / no encontrada / error: mensaje claro
-    if (
-      !nombreNormalizado ||
-      nombreNormalizado === "NO ENCONTRADA" ||
-      nombreNormalizado.includes("ERROR CONSULTANDO")
-    ) {
-      setError("No se ha podido identificar la máquina con ese QR.");
+    if (!nombreNormalizado) {
+      setError("No se ha encontrado una máquina para ese QR.");
       return;
     }
 
+    // Buscamos la máquina en la lista de manera case-insensitive
     const machineFromList = machines.find(
       (m) => m.toUpperCase().trim() === nombreNormalizado
     );
 
     if (machineFromList) {
+      // ✅ Máquina válida: ir DIRECTO al chat
       setError(null);
-
-      // ✅ Guardamos modo QR + machineNo (ARBMCHNo) para que Chat muestre el mensaje HVO
-      safeSetSession(ACCESS_MODE_KEY, "qr");
-      safeSetSession(MACHINE_NO_KEY, machineNo);
-
-      // ✅ IMPORTANTE: seguimos pasando STRING como antes (para no romper App.js)
       onSelectMachine(machineFromList);
     } else {
+      // ❌ No está en la lista: dejamos escrito y pedimos que revise
       setInput(nombreNormalizado);
       setError("Selecciona una máquina válida de la lista.");
     }
   }
-
-  // ------------------------------
-  // QR nativo
-  // ------------------------------
+  
+  // ------------------------------ 
+  // Función global para QR nativo (Android/iOS app principal)
+  // ------------------------------ 
   useEffect(() => {
+    // La app nativa llamará a: window.setQrFromNative('<texto QR>');
     window.setQrFromNative = async (decodedText) => {
       if (!decodedText) return;
 
       try {
         const nombreMaquina = await obtenerNombreMaquina(decodedText);
-        handleMachineFromQr(nombreMaquina, decodedText);
+        handleMachineFromQr(nombreMaquina);
       } catch (e) {
         console.error("Error procesando QR nativo", e);
         setError("Error procesando el QR.");
@@ -194,6 +179,7 @@ export default function MachineSelection({ onSelectMachine }) {
   useEffect(() => {
     const regionId = "qr-modal-reader";
     if (!showQRModal) {
+      // Si ocultas el modal, limpia el escáner
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -208,6 +194,7 @@ export default function MachineSelection({ onSelectMachine }) {
 
       Html5Qrcode.getCameras()
         .then((devices) => {
+          // Comprobamos que haya al menos una cámara
           if (!devices || devices.length === 0) {
             setError("No se detectó ninguna cámara.");
             setShowQRModal(false);
@@ -220,12 +207,16 @@ export default function MachineSelection({ onSelectMachine }) {
               {
                 fps: 10,
                 qrbox: function (viewfinderWidth, viewfinderHeight) {
-                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                  const minEdge = Math.min(
+                    viewfinderWidth,
+                    viewfinderHeight
+                  );
                   return { width: minEdge * 0.8, height: minEdge * 0.98 };
                 },
               },
               (decodedText) => {
                 obtenerNombreMaquina(decodedText).then((nombreMaquina) => {
+                  // Cerramos el modal y el escáner SÍ o SÍ
                   setShowQRModal(false);
                   html5QrCode
                     .stop()
@@ -233,12 +224,15 @@ export default function MachineSelection({ onSelectMachine }) {
                     .catch(() => {});
                   qrCodeScannerRef.current = null;
 
-                  handleMachineFromQr(nombreMaquina, decodedText);
+                  // 👉 Reutilizamos la función común
+                  handleMachineFromQr(nombreMaquina);
                 });
               },
-              () => {}
+              (errorMessage) => {
+                // Puedes loggear si quieres
+              }
             )
-            .catch(() => {
+            .catch((err) => {
               setError("No se pudo iniciar el escáner.");
               setShowQRModal(false);
               html5QrCode.clear().catch(() => {});
@@ -250,6 +244,7 @@ export default function MachineSelection({ onSelectMachine }) {
         });
     }, 300);
 
+    // Limpieza extra si el componente se desmonta
     return () => {
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
@@ -267,6 +262,7 @@ export default function MachineSelection({ onSelectMachine }) {
         backgroundRepeat: "no-repeat",
         backgroundPosition: "center center",
         backgroundSize: "cover",
+        // 👈 quitamos backgroundAttachment y minHeight 100vh
       }}
     >
       <div className="selector-card">
@@ -274,7 +270,8 @@ export default function MachineSelection({ onSelectMachine }) {
           className="header-selection"
           style={{ display: "flex", alignItems: "center" }}
         >
-          <div style={{ width: 42 }} />
+          <div style={{ width: 42 }} />{" "}
+          {/* Espacio a la izquierda, por simetría visual */}
           <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
             Chatea con{" "}
             <span className="brand">
@@ -302,12 +299,15 @@ export default function MachineSelection({ onSelectMachine }) {
           className="btn-escanear-qr"
           tabIndex={0}
           onClick={() => {
+            // 1️⃣ Si la app nativa ha expuesto su función, usamos SIEMPRE el escáner nativo
             if (
               typeof window !== "undefined" &&
               typeof window.openNativeQrScanner === "function"
             ) {
               window.openNativeQrScanner();
             } else {
+              // 2️⃣ Si estamos en un navegador normal (o aún no tienen la función),
+              // usamos el escáner HTML5 (Html5Qrcode) como hasta ahora
               setShowQRModal(true);
             }
           }}
@@ -339,9 +339,10 @@ export default function MachineSelection({ onSelectMachine }) {
           />
         </div>
 
+        {/* Mostrar error del QR si hay */}
         {error && <div style={{ color: "red", marginTop: 16 }}>{error}</div>}
 
-        {/* MODAL QR */}
+        {/* --- MODAL QR --- */}
         {showQRModal && (
           <div
             style={{
@@ -371,9 +372,14 @@ export default function MachineSelection({ onSelectMachine }) {
               <div style={{ textAlign: "right" }}>
                 <button
                   onClick={async () => {
+                    // PARAR y limpiar el scanner al cerrar el modal de forma segura
                     if (qrCodeScannerRef.current) {
-                      try { await qrCodeScannerRef.current.stop(); } catch {}
-                      try { await qrCodeScannerRef.current.clear(); } catch {}
+                      try {
+                        await qrCodeScannerRef.current.stop();
+                      } catch {}
+                      try {
+                        await qrCodeScannerRef.current.clear();
+                      } catch {}
                       qrCodeScannerRef.current = null;
                     }
                     setShowQRModal(false);
@@ -431,7 +437,10 @@ export default function MachineSelection({ onSelectMachine }) {
               }}
               onBlur={() => {
                 setInputFocused(false);
-                if (typeof window !== "undefined") window.scrollTo(0, 0);
+                if (typeof window !== "undefined") {
+                  // Al cerrar el teclado / perder foco, volvemos arriba
+                  window.scrollTo(0, 0);
+                }
               }}
               onChange={(e) => setInput(e.target.value.toUpperCase())}
               style={{ minWidth: 0 }}
@@ -461,7 +470,9 @@ export default function MachineSelection({ onSelectMachine }) {
             {showDropdown && (
               <div className="dropdown">
                 {filtered.length === 0 && (
-                  <div className="dropdown-item disabled">No hay resultados</div>
+                  <div className="dropdown-item disabled">
+                    No hay resultados
+                  </div>
                 )}
                 {filtered.map((machine, idx) => (
                   <div
@@ -477,7 +488,7 @@ export default function MachineSelection({ onSelectMachine }) {
           </div>
         </div>
 
-        {/* BOTÓN PREGUNTAR ABAJO */}
+        {/* BOTÓN PREGUNTAR ABAJO: solo si el teclado NO está abierto */}
         {!keyboardOpen && (
           <div
             style={{
@@ -492,7 +503,7 @@ export default function MachineSelection({ onSelectMachine }) {
               width: "100vw",
               boxSizing: "border-box",
               pointerEvents: "auto",
-              background: "rgba(255,255,255,0)",
+              background: "rgba(255,255,255,0)", // transparente
             }}
           >
             <button
@@ -515,15 +526,10 @@ export default function MachineSelection({ onSelectMachine }) {
               }}
               disabled={!input.trim()}
               onClick={() => {
+                // Validación: solo dejar pasar si existe en la lista
                 if (machines.includes(input.trim())) {
                   setError(null);
-
-                  // ✅ modo lista (para que Chat muestre el mensaje guía)
-                  safeSetSession(ACCESS_MODE_KEY, "list");
-                  safeRemoveSession(MACHINE_NO_KEY);
-
-                  // ✅ seguimos pasando STRING (como antes)
-                  onSelectMachine(input.trim());
+                  onSelectMachine(input);
                 } else {
                   setError("Selecciona una máquina válida de la lista.");
                 }
