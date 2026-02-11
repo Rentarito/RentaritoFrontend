@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
-import MachineSelection from './components/MachineSelection';
-import Chat from './components/Chat';
-import machineCache from './helpers/machineCache';
+import React, { useState } from "react";
+import MachineSelection from "./components/MachineSelection";
+import Chat from "./components/Chat";
 
 export default function App() {
-  // 1. Siempre declara los hooks primero
   const [selectedMachine, setSelectedMachine] = useState(null);
+  // selectedMachine = { folder, accessMode: "qr"|"list", machineNo?: string }
 
-  // 2. Ahora haz el check del parámetro secreto
   const urlParams = new URLSearchParams(window.location.search);
-  const secret = urlParams.get('secret');
-  if (secret !== 'Rentarito.2025') {
+  const secret = urlParams.get("secret");
+  if (secret !== "Rentarito.2025") {
     return (
       <div style={{
         padding: 50,
@@ -29,14 +27,15 @@ export default function App() {
     );
   }
 
-  // 3. El resto del render
   return (
     <div className="rentarito-app-root">
       {!selectedMachine ? (
         <MachineSelection onSelectMachine={setSelectedMachine} />
       ) : (
         <Chat
-          machineFolder={selectedMachine}
+          machineFolder={selectedMachine.folder}
+          accessMode={selectedMachine.accessMode}
+          machineNo={selectedMachine.machineNo}
           onBack={() => setSelectedMachine(null)}
         />
       )}

@@ -28,11 +28,13 @@ export default function MachineSelection({ onSelectMachine }) {
   const initialHeightRef = useRef(
     typeof window !== "undefined" ? window.innerHeight : 0
   );
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
     }
   }, []);
+
   useEffect(() => {
     const threshold = 120; // px; puedes ajustar este valor si lo necesitas
 
@@ -108,10 +110,7 @@ export default function MachineSelection({ onSelectMachine }) {
       });
 
       if (!resp.ok) {
-        console.error(
-          "Error respuesta backend nombre máquina:",
-          resp.status
-        );
+        console.error("Error respuesta backend nombre máquina:", resp.status);
         return "Error consultando máquina";
       }
 
@@ -129,8 +128,10 @@ export default function MachineSelection({ onSelectMachine }) {
   }
 
   // 👉 Función común para decidir qué hacer con la máquina escaneada
-  function handleMachineFromQr(nombreMaquinaCrudo) {
+  // CAMBIO: ahora recibe también el nombre completo (decodedText) para pasarlo al chat
+  function handleMachineFromQr(nombreMaquinaCrudo, machineNoCrudo) {
     const nombreNormalizado = (nombreMaquinaCrudo || "").toUpperCase().trim();
+    const machineNo = (machineNoCrudo || "").trim(); // nombre completo (ARBMCHNo)
 
     if (!nombreNormalizado) {
       setError("No se ha encontrado una máquina para ese QR.");
@@ -145,17 +146,23 @@ export default function MachineSelection({ onSelectMachine }) {
     if (machineFromList) {
       // ✅ Máquina válida: ir DIRECTO al chat
       setError(null);
-      onSelectMachine(machineFromList);
+
+      // CAMBIO: pasamos objeto con modo y machineNo (QR)
+      onSelectMachine({
+        folder: machineFromList,
+        accessMode: "qr",
+        machineNo: machineNo,
+      });
     } else {
       // ❌ No está en la lista: dejamos escrito y pedimos que revise
       setInput(nombreNormalizado);
       setError("Selecciona una máquina válida de la lista.");
     }
   }
-  
-  // ------------------------------ 
+
+  // ------------------------------
   // Función global para QR nativo (Android/iOS app principal)
-  // ------------------------------ 
+  // ------------------------------
   useEffect(() => {
     // La app nativa llamará a: window.setQrFromNative('<texto QR>');
     window.setQrFromNative = async (decodedText) => {
@@ -163,7 +170,9 @@ export default function MachineSelection({ onSelectMachine }) {
 
       try {
         const nombreMaquina = await obtenerNombreMaquina(decodedText);
-        handleMachineFromQr(nombreMaquina);
+
+        // CAMBIO: pasamos también decodedText como machineNo
+        handleMachineFromQr(nombreMaquina, decodedText);
       } catch (e) {
         console.error("Error procesando QR nativo", e);
         setError("Error procesando el QR.");
@@ -207,10 +216,7 @@ export default function MachineSelection({ onSelectMachine }) {
               {
                 fps: 10,
                 qrbox: function (viewfinderWidth, viewfinderHeight) {
-                  const minEdge = Math.min(
-                    viewfinderWidth,
-                    viewfinderHeight
-                  );
+                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                   return { width: minEdge * 0.8, height: minEdge * 0.98 };
                 },
               },
@@ -224,8 +230,8 @@ export default function MachineSelection({ onSelectMachine }) {
                     .catch(() => {});
                   qrCodeScannerRef.current = null;
 
-                  // 👉 Reutilizamos la función común
-                  handleMachineFromQr(nombreMaquina);
+                  // CAMBIO: pasamos también decodedText como machineNo (nombre completo)
+                  handleMachineFromQr(nombreMaquina, decodedText);
                 });
               },
               (errorMessage) => {
@@ -529,7 +535,9 @@ export default function MachineSelection({ onSelectMachine }) {
                 // Validación: solo dejar pasar si existe en la lista
                 if (machines.includes(input.trim())) {
                   setError(null);
-                  onSelectMachine(input);
+
+                  // CAMBIO: entrada por lista -> pasamos objeto con accessMode
+                  onSelectMachine({ folder: input.trim(), accessMode: "list" });
                 } else {
                   setError("Selecciona una máquina válida de la lista.");
                 }
