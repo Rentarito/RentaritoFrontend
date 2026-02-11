@@ -28,7 +28,6 @@ export async function fetchHvoStatus(machineNo) {
   const res = await fetch(`${BASE_URL}/hvo-status`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${API_TOKEN}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ machineNo }),
