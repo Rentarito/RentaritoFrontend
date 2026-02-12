@@ -12,17 +12,24 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       : `La maquina ${label} no puede utilizar el aceite HVO.`;
 
   const fleetAskText =
-    "Dame el codigo de flota que aparece en la parte lateral de la maquina, responde solo con el numero de flota.";
+    "Dame el codigo de flota que aparece en la parte lateral de la maquina, responde solo con el numero de flota.\n\nSi en la máquina no aparecen los ceros iniciales, escribe un asterisco. Ejemplo: *589";
 
   const isHvoQuestion = (q) => {
     const s = (q || "").toLowerCase();
     return s.includes("hvo") || s.includes("aceite hvo");
   };
 
-  const extractFleetNumber = (q) => {
+  // ✅ Permite "589" o "*589"
+  const extractFleetInput = (q) => {
     const s = (q || "").trim();
+
+    if (s.startsWith("*")) {
+      const m = s.slice(1).match(/\d+/);
+      return m ? { raw: `*${m[0]}`, value: m[0], isSuffix: true } : null;
+    }
+
     const m = s.match(/\d+/);
-    return m ? m[0] : null;
+    return m ? { raw: m[0], value: m[0], isSuffix: false } : null;
   };
 
   const [chat, setChat] = useState([{ role: "assistant", content: introText }]);
@@ -35,10 +42,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   const scrollRef = useRef();
   const sessionId = getSessionId();
 
-  // Cache: key -> { exists, internal, hvoAllowed }
+  // Cache: key -> respuesta backend
   const hvoCacheRef = useRef({});
 
-  // Estado conversacional para lista: esperando número de flota
+  // Estado para lista: esperando número de flota
   const waitingFleetRef = useRef(false);
 
   // Offset header
@@ -97,33 +104,34 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
     try {
       // -------------------------------------------------------
-      // 1) Si estamos esperando número de flota (modo lista)
+      // 1) Si estamos esperando flota (modo lista)
       // -------------------------------------------------------
       if (waitingFleetRef.current) {
-        const fleetNumber = extractFleetNumber(query);
+        const fleet = extractFleetInput(query);
 
-        if (!fleetNumber) {
+        if (!fleet) {
           setChat((old) => [...old, { role: "assistant", content: fleetAskText }]);
           setLoading(false);
           return;
         }
 
-        const key = `fleet:${machineFolder}:${fleetNumber}`;
+        const key = `fleet:${machineFolder}:${fleet.raw}`;
         let data = hvoCacheRef.current[key];
 
         if (!data) {
-          data = await fetchMachineHvoByFleet(machineFolder, fleetNumber);
+          // fleet.raw puede ser "381" o "*589"
+          data = await fetchMachineHvoByFleet(machineFolder, fleet.raw);
           hvoCacheRef.current[key] = data;
         }
 
-        // ✅ Si NO existe: comunicarlo y seguir esperando otra respuesta
+        // ❌ No existe
         if (!data.exists) {
           waitingFleetRef.current = true;
           setChat((old) => [
             ...old,
             {
               role: "assistant",
-              content: `Ese codigo de flota ${fleetNumber} no existe para ${machineFolder}. Revisa el numero y vuelve a enviarlo.`,
+              content: `Ese codigo de flota ${fleet.raw} no existe para ${machineFolder}. Revisa el numero y vuelve a enviarlo.`,
             },
             { role: "assistant", content: fleetAskText },
           ]);
@@ -131,15 +139,33 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
           return;
         }
 
-        // ✅ Si existe: ya NO esperamos más flota
-        waitingFleetRef.current = false;
+        // ⚠️ Múltiples coincidencias (sobre todo en modo *)
+        if (data.multiple) {
+          waitingFleetRef.current = true;
+          setChat((old) => [
+            ...old,
+            {
+              role: "assistant",
+              content:
+                `He encontrado más de una máquina cuyo código de flota termina en ${fleet.value}. ` +
+                `Por favor, escribe más dígitos (por ejemplo *0589) o el código completo si lo tienes.`,
+            },
+            { role: "assistant", content: fleetAskText },
+          ]);
+          setLoading(false);
+          return;
+        }
 
-        // ✅ Si existe y internal=true => puede; si internal=false => no puede
+        // ✅ Existe y es única: internal define si puede
+        waitingFleetRef.current = false;
         const allowed = !!data.internal;
 
         setChat((old) => [
           ...old,
-          { role: "assistant", content: makeHvoMsgText(allowed, `${machineFolder} (${fleetNumber})`) },
+          {
+            role: "assistant",
+            content: makeHvoMsgText(allowed, `${machineFolder} (${fleet.raw})`),
+          },
         ]);
 
         setLoading(false);
@@ -150,7 +176,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       // 2) Si el usuario pregunta por HVO
       // -------------------------------------------------------
       if (isHvoQuestion(query)) {
-        // 2A) Entró por QR
+        // 2A) Entró por QR: machineNo
         if (machineNo) {
           const key = `no:${machineNo}`;
           let data = hvoCacheRef.current[key];
@@ -160,7 +186,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
             hvoCacheRef.current[key] = data;
           }
 
-          // ✅ Nueva regla: allowed = exists && internal
+          // ✅ regla: allowed = exists && internal
           const allowed = !!data.exists && !!data.internal;
 
           setChat((old) => [...old, { role: "assistant", content: makeHvoMsgText(allowed, machineNo) }]);
