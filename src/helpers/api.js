@@ -28,3 +28,14 @@ export async function fetchManualAnswer({ folder, history, query, probId, sessio
   if (!res.ok) throw new Error("Error del servidor");
   return await res.json();
 }
+
+export async function fetchMachineHvo(machineNo) {
+  const resp = await fetch(`${BASE_URL}/machine-hvo?machineNo=${encodeURIComponent(machineNo)}`, {
+    headers: {
+      "Authorization": `Bearer ${API_TOKEN}`,
+    },
+  });
+
+  if (!resp.ok) throw new Error("Error consultando HVO");
+  return await resp.json();
+}

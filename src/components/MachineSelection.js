@@ -108,10 +108,7 @@ export default function MachineSelection({ onSelectMachine }) {
       });
 
       if (!resp.ok) {
-        console.error(
-          "Error respuesta backend nombre máquina:",
-          resp.status
-        );
+        console.error("Error respuesta backend nombre máquina:", resp.status);
         return "Error consultando máquina";
       }
 
@@ -129,7 +126,8 @@ export default function MachineSelection({ onSelectMachine }) {
   }
 
   // 👉 Función común para decidir qué hacer con la máquina escaneada
-  function handleMachineFromQr(nombreMaquinaCrudo) {
+  // ✅ CAMBIO: ahora recibe también el código completo del QR (machineNoCompleto)
+  function handleMachineFromQr(nombreMaquinaCrudo, machineNoCompleto) {
     const nombreNormalizado = (nombreMaquinaCrudo || "").toUpperCase().trim();
 
     if (!nombreNormalizado) {
@@ -145,17 +143,18 @@ export default function MachineSelection({ onSelectMachine }) {
     if (machineFromList) {
       // ✅ Máquina válida: ir DIRECTO al chat
       setError(null);
-      onSelectMachine(machineFromList);
+      // ✅ CAMBIO: pasamos también el código completo del QR
+      onSelectMachine(machineFromList, machineNoCompleto || null);
     } else {
       // ❌ No está en la lista: dejamos escrito y pedimos que revise
       setInput(nombreNormalizado);
       setError("Selecciona una máquina válida de la lista.");
     }
   }
-  
-  // ------------------------------ 
+
+  // ------------------------------
   // Función global para QR nativo (Android/iOS app principal)
-  // ------------------------------ 
+  // ------------------------------
   useEffect(() => {
     // La app nativa llamará a: window.setQrFromNative('<texto QR>');
     window.setQrFromNative = async (decodedText) => {
@@ -163,7 +162,8 @@ export default function MachineSelection({ onSelectMachine }) {
 
       try {
         const nombreMaquina = await obtenerNombreMaquina(decodedText);
-        handleMachineFromQr(nombreMaquina);
+        // ✅ CAMBIO: enviamos también el código completo del QR
+        handleMachineFromQr(nombreMaquina, decodedText);
       } catch (e) {
         console.error("Error procesando QR nativo", e);
         setError("Error procesando el QR.");
@@ -207,10 +207,7 @@ export default function MachineSelection({ onSelectMachine }) {
               {
                 fps: 10,
                 qrbox: function (viewfinderWidth, viewfinderHeight) {
-                  const minEdge = Math.min(
-                    viewfinderWidth,
-                    viewfinderHeight
-                  );
+                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                   return { width: minEdge * 0.8, height: minEdge * 0.98 };
                 },
               },
@@ -225,7 +222,8 @@ export default function MachineSelection({ onSelectMachine }) {
                   qrCodeScannerRef.current = null;
 
                   // 👉 Reutilizamos la función común
-                  handleMachineFromQr(nombreMaquina);
+                  // ✅ CAMBIO: enviamos también el código completo del QR
+                  handleMachineFromQr(nombreMaquina, decodedText);
                 });
               },
               (errorMessage) => {
@@ -529,7 +527,8 @@ export default function MachineSelection({ onSelectMachine }) {
                 // Validación: solo dejar pasar si existe en la lista
                 if (machines.includes(input.trim())) {
                   setError(null);
-                  onSelectMachine(input);
+                  // ✅ CAMBIO: en selección manual no hay machineNo completo
+                  onSelectMachine(input, null);
                 } else {
                   setError("Selecciona una máquina válida de la lista.");
                 }

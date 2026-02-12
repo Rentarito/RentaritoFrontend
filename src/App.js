@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import MachineSelection from './components/MachineSelection';
 import Chat from './components/Chat';
-import machineCache from './helpers/machineCache';
 
 export default function App() {
-  // 1. Siempre declara los hooks primero
   const [selectedMachine, setSelectedMachine] = useState(null);
+  const [selectedMachineNo, setSelectedMachineNo] = useState(null);
 
-  // 2. Ahora haz el check del parámetro secreto
   const urlParams = new URLSearchParams(window.location.search);
   const secret = urlParams.get('secret');
   if (secret !== 'Rentarito.2025') {
@@ -29,15 +27,26 @@ export default function App() {
     );
   }
 
-  // 3. El resto del render
+  // Nuevo: handler que recibe (carpetaChat, machineNoCompleto)
+  const handleSelectMachine = (machineFolder, machineNo) => {
+    setSelectedMachine(machineFolder);
+    setSelectedMachineNo(machineNo || null);
+  };
+
+  const handleBack = () => {
+    setSelectedMachine(null);
+    setSelectedMachineNo(null);
+  };
+
   return (
     <div className="rentarito-app-root">
       {!selectedMachine ? (
-        <MachineSelection onSelectMachine={setSelectedMachine} />
+        <MachineSelection onSelectMachine={handleSelectMachine} />
       ) : (
         <Chat
           machineFolder={selectedMachine}
-          onBack={() => setSelectedMachine(null)}
+          machineNo={selectedMachineNo}
+          onBack={handleBack}
         />
       )}
     </div>

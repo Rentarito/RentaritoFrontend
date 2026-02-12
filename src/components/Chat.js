@@ -1,13 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatBubble from "./ChatBubble";
 import getSessionId from "../helpers/sessionIdHelper";
-import { fetchManualAnswer } from "../helpers/api";
+import { fetchManualAnswer, fetchMachineHvo } from "../helpers/api";
 
-export default function Chat({ machineFolder, onBack }) {
+export default function Chat({ machineFolder, machineNo, onBack }) {
+  const introText = `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`;
+
+  const hvoMsgText = machineNo
+    ? `La maquina ${machineNo} puede utilizar el aceite HVO.`
+    : null;
+
   const [chat, setChat] = useState([
     {
       role: "assistant",
-      content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+      content: introText,
     },
   ]);
   const [input, setInput] = useState("");
@@ -17,6 +23,8 @@ export default function Chat({ machineFolder, onBack }) {
   const [imageUrl, setImageUrl] = useState(null);
 
   const scrollRef = useRef();
+  const hvoAllowedRef = useRef(false);
+
   const sessionId = getSessionId();
 
   // Offset dinámico para que el header no quede detrás del header nativo
@@ -34,7 +42,7 @@ export default function Chat({ machineFolder, onBack }) {
     const isAndroid = /Android/.test(ua);
 
     // 👉 Ajusta SOLO estos dos valores si hiciera falta
-    const IOS_OFFSET = 80;     // espacio en iOS
+    const IOS_OFFSET = 80; // espacio en iOS
     const ANDROID_OFFSET = 40; // espacio en Android
     const DEFAULT_OFFSET = 40;
 
@@ -51,6 +59,44 @@ export default function Chat({ machineFolder, onBack }) {
       window.scrollTo(0, 0);
     }
   }, []);
+
+  // ✅ NUEVO: comprobar HVO al entrar (si hay machineNo)
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkHvo() {
+      if (!machineNo) return;
+
+      try {
+        const data = await fetchMachineHvo(machineNo);
+        if (cancelled) return;
+
+        if (data && data.hvoAllowed) {
+          hvoAllowedRef.current = true;
+
+          setChat((old) => {
+            // Evitar duplicados
+            if (old.some((m) => (m.content || "").includes("aceite HVO")))
+              return old;
+
+            const msg = { role: "assistant", content: hvoMsgText };
+
+            // Insertar justo debajo del primer mensaje del bot
+            if (old.length <= 1) return [...old, msg];
+            return [old[0], msg, ...old.slice(1)];
+          });
+        }
+      } catch (e) {
+        // Silencioso: si falla el servicio, no rompemos el chat
+        console.warn("No se pudo comprobar HVO:", e.message);
+      }
+    }
+
+    checkHvo();
+    return () => {
+      cancelled = true;
+    };
+  }, [machineNo, hvoMsgText]);
 
   // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
@@ -113,12 +159,19 @@ export default function Chat({ machineFolder, onBack }) {
   };
 
   const clearChat = () => {
-    setChat([
+    const base = [
       {
         role: "assistant",
-        content: `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`,
+        content: introText,
       },
-    ]);
+    ];
+
+    // ✅ NUEVO: si HVO estaba permitido, reinsertarlo al limpiar
+    if (hvoAllowedRef.current && hvoMsgText) {
+      base.push({ role: "assistant", content: hvoMsgText });
+    }
+
+    setChat(base);
     setInput("");
     setError(null);
     setImageUrl(null);
