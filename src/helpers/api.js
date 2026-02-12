@@ -39,3 +39,17 @@ export async function fetchMachineHvo(machineNo) {
   if (!resp.ok) throw new Error("Error consultando HVO");
   return await resp.json();
 }
+
+export async function fetchMachineHvoByFleet(groupCode, fleetCode) {
+  const resp = await fetch(
+    `${BASE_URL}/machine-hvo-fleet?groupCode=${encodeURIComponent(groupCode)}&fleetCode=${encodeURIComponent(fleetCode)}`,
+    {
+      headers: {
+        "Authorization": `Bearer ${API_TOKEN}`,
+      },
+    }
+  );
+
+  if (!resp.ok) throw new Error("Error consultando HVO (fleet)");
+  return await resp.json();
+}
