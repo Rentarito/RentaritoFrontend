@@ -31,11 +31,8 @@ export async function fetchManualAnswer({ folder, history, query, probId, sessio
 
 export async function fetchMachineHvo(machineNo) {
   const resp = await fetch(`${BASE_URL}/machine-hvo?machineNo=${encodeURIComponent(machineNo)}`, {
-    headers: {
-      "Authorization": `Bearer ${API_TOKEN}`,
-    },
+    headers: { "Authorization": `Bearer ${API_TOKEN}` },
   });
-
   if (!resp.ok) throw new Error("Error consultando HVO");
   return await resp.json();
 }
@@ -43,13 +40,8 @@ export async function fetchMachineHvo(machineNo) {
 export async function fetchMachineHvoByFleet(groupCode, fleetCode) {
   const resp = await fetch(
     `${BASE_URL}/machine-hvo-fleet?groupCode=${encodeURIComponent(groupCode)}&fleetCode=${encodeURIComponent(fleetCode)}`,
-    {
-      headers: {
-        "Authorization": `Bearer ${API_TOKEN}`,
-      },
-    }
+    { headers: { "Authorization": `Bearer ${API_TOKEN}` } }
   );
-
   if (!resp.ok) throw new Error("Error consultando HVO (fleet)");
   return await resp.json();
 }

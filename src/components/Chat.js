@@ -11,13 +11,14 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       ? `La maquina ${label} puede utilizar el aceite HVO.`
       : `La maquina ${label} no puede utilizar el aceite HVO.`;
 
-  // Detecta si el usuario pregunta por HVO
+  const fleetAskText =
+    "Dame el codigo de flota que aparece en la parte lateral de la maquina, responde solo con el numero de flota.";
+
   const isHvoQuestion = (q) => {
     const s = (q || "").toLowerCase();
     return s.includes("hvo") || s.includes("aceite hvo");
   };
 
-  // Extrae el número de flota de un texto (preferimos solo números)
   const extractFleetNumber = (q) => {
     const s = (q || "").trim();
     const m = s.match(/\d+/);
@@ -34,10 +35,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   const scrollRef = useRef();
   const sessionId = getSessionId();
 
-  // Cache para no repetir llamadas: key -> boolean
+  // Cache: key -> { exists, internal, hvoAllowed }
   const hvoCacheRef = useRef({});
 
-  // Estado “conversacional” para el modo lista: esperando número de flota
+  // Estado conversacional para lista: esperando número de flota
   const waitingFleetRef = useRef(false);
 
   // Offset header
@@ -96,87 +97,86 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
     try {
       // -------------------------------------------------------
-      // 1) Si estamos esperando el número de flota (modo lista)
+      // 1) Si estamos esperando número de flota (modo lista)
       // -------------------------------------------------------
       if (waitingFleetRef.current) {
         const fleetNumber = extractFleetNumber(query);
 
         if (!fleetNumber) {
+          setChat((old) => [...old, { role: "assistant", content: fleetAskText }]);
+          setLoading(false);
+          return;
+        }
+
+        const key = `fleet:${machineFolder}:${fleetNumber}`;
+        let data = hvoCacheRef.current[key];
+
+        if (!data) {
+          data = await fetchMachineHvoByFleet(machineFolder, fleetNumber);
+          hvoCacheRef.current[key] = data;
+        }
+
+        // ✅ Si NO existe: comunicarlo y seguir esperando otra respuesta
+        if (!data.exists) {
+          waitingFleetRef.current = true;
           setChat((old) => [
             ...old,
             {
               role: "assistant",
-              content:
-                "Dame el codigo de flota que aparece en la parte lateral de la maquina, responde solo con el numero de flota.",
+              content: `Ese codigo de flota ${fleetNumber} no existe para ${machineFolder}. Revisa el numero y vuelve a enviarlo.`,
             },
+            { role: "assistant", content: fleetAskText },
           ]);
           setLoading(false);
           return;
         }
 
+        // ✅ Si existe: ya NO esperamos más flota
         waitingFleetRef.current = false;
 
-        const key = `fleet:${machineFolder}:${fleetNumber}`;
-        let allowed = hvoCacheRef.current[key];
-
-        if (allowed === undefined) {
-          const data = await fetchMachineHvoByFleet(machineFolder, fleetNumber);
-          allowed = !!data?.hvoAllowed;
-          hvoCacheRef.current[key] = allowed;
-        }
+        // ✅ Si existe y internal=true => puede; si internal=false => no puede
+        const allowed = !!data.internal;
 
         setChat((old) => [
           ...old,
-          {
-            role: "assistant",
-            content: makeHvoMsgText(allowed, `${machineFolder} (${fleetNumber})`),
-          },
+          { role: "assistant", content: makeHvoMsgText(allowed, `${machineFolder} (${fleetNumber})`) },
         ]);
 
         setLoading(false);
-        return; // No llamamos a /ask
+        return;
       }
 
       // -------------------------------------------------------
       // 2) Si el usuario pregunta por HVO
       // -------------------------------------------------------
       if (isHvoQuestion(query)) {
-        // 2A) Entró por QR (tenemos machineNo)
+        // 2A) Entró por QR
         if (machineNo) {
           const key = `no:${machineNo}`;
-          let allowed = hvoCacheRef.current[key];
+          let data = hvoCacheRef.current[key];
 
-          if (allowed === undefined) {
-            const data = await fetchMachineHvo(machineNo);
-            allowed = !!data?.hvoAllowed;
-            hvoCacheRef.current[key] = allowed;
+          if (!data) {
+            data = await fetchMachineHvo(machineNo);
+            hvoCacheRef.current[key] = data;
           }
 
-          setChat((old) => [
-            ...old,
-            { role: "assistant", content: makeHvoMsgText(allowed, machineNo) },
-          ]);
+          // ✅ Nueva regla: allowed = exists && internal
+          const allowed = !!data.exists && !!data.internal;
 
+          setChat((old) => [...old, { role: "assistant", content: makeHvoMsgText(allowed, machineNo) }]);
           setLoading(false);
-          return; // No llamamos a /ask
+          return;
         }
 
-        // 2B) Entró por selector/lista (NO hay machineNo) => pedir flota
+        // 2B) Entró por lista: pedir flota
         waitingFleetRef.current = true;
-        setChat((old) => [
-          ...old,
-          {
-            role: "assistant",
-            content:
-              "Dame el codigo de flota que aparece en la parte lateral de la maquina, responde solo con el numero de flota.",
-          },
-        ]);
+        setChat((old) => [...old, { role: "assistant", content: fleetAskText }]);
         setLoading(false);
-        return; // No llamamos a /ask
+        return;
       }
 
       // -------------------------------------------------------
-      // 3) Flujo normal del chatbot (manuales / GPT)
+      // 3) Flujo normal del chatbot
       // -------------------------------------------------------
       const history = [...chat, { role: "user", content: query }].map((msg) => ({
         role: msg.role,
