@@ -11,11 +11,14 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       ? `La maquina ${machineNo} puede utilizar el aceite HVO.`
       : `La maquina ${machineNo} no puede utilizar el aceite HVO.`;
 
+  // Detecta si el usuario está preguntando por HVO (bastante permisivo)
+  const isHvoQuestion = (q) => {
+    const s = (q || "").toLowerCase();
+    return s.includes("hvo") || s.includes("aceite hvo");
+  };
+
   const [chat, setChat] = useState([
-    {
-      role: "assistant",
-      content: introText,
-    },
+    { role: "assistant", content: introText },
   ]);
   const [input, setInput] = useState("");
   const [probId, setProbId] = useState(null);
@@ -24,9 +27,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   const [imageUrl, setImageUrl] = useState(null);
 
   const scrollRef = useRef();
-  const hvoStatusRef = useRef(null); // null = desconocido, true/false = decidido
-
   const sessionId = getSessionId();
+
+  // Cache del resultado HVO para no llamar cada vez si el usuario repite
+  const hvoStatusRef = useRef(null); // null = no consultado, true/false = resultado
 
   // Offset dinámico para que el header no quede detrás del header nativo
   const [headerOffset, setHeaderOffset] = useState(24);
@@ -42,9 +46,8 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     const isIOS = /iPad|iPhone|iPod/.test(ua);
     const isAndroid = /Android/.test(ua);
 
-    // 👉 Ajusta SOLO estos dos valores si hiciera falta
-    const IOS_OFFSET = 80; // espacio en iOS
-    const ANDROID_OFFSET = 40; // espacio en Android
+    const IOS_OFFSET = 80;
+    const ANDROID_OFFSET = 40;
     const DEFAULT_OFFSET = 40;
 
     let offset = DEFAULT_OFFSET;
@@ -56,50 +59,8 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
   // Al entrar en el chat, nos aseguramos de estar arriba del todo
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-    }
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
   }, []);
-
-  // ✅ NUEVO: comprobar HVO al entrar (si hay machineNo) y mostrar SIEMPRE el mensaje (positivo o negativo)
-  useEffect(() => {
-    let cancelled = false;
-
-    async function checkHvo() {
-      if (!machineNo) return;
-
-      try {
-        const data = await fetchMachineHvo(machineNo);
-        if (cancelled) return;
-
-        const allowed = !!data?.hvoAllowed; // true si puede, false si no (incluye "no sale en el servicio")
-        hvoStatusRef.current = allowed;
-
-        setChat((old) => {
-          // Quitamos cualquier mensaje anterior HVO (por si re-render / cambios)
-          const withoutHvo = old.filter((m) => m.tag !== "hvo");
-
-          const msg = {
-            role: "assistant",
-            content: makeHvoMsgText(allowed),
-            tag: "hvo",
-          };
-
-          // Insertar justo debajo del primer mensaje del bot
-          if (withoutHvo.length <= 1) return [...withoutHvo, msg];
-          return [withoutHvo[0], msg, ...withoutHvo.slice(1)];
-        });
-      } catch (e) {
-        // Silencioso: si falla el servicio, no rompemos el chat
-        console.warn("No se pudo comprobar HVO:", e.message);
-      }
-    }
-
-    checkHvo();
-    return () => {
-      cancelled = true;
-    };
-  }, [machineNo]);
 
   // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
@@ -109,9 +70,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   // Botón físico "atrás" de Android: volvemos y recargamos
   useEffect(() => {
     const handlePopState = () => {
-      if (typeof onBack === "function") {
-        onBack();
-      }
+      if (typeof onBack === "function") onBack();
       if (typeof window !== "undefined" && window.location) {
         window.location.reload();
       }
@@ -120,14 +79,13 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     window.history.pushState(null, "");
     window.addEventListener("popstate", handlePopState);
 
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [onBack]);
 
   const sendMessage = async () => {
     const query = input.trim();
     if (!query) return;
+
     setInput("");
     setChat((old) => [...old, { role: "user", content: query }]);
     setLoading(true);
@@ -135,12 +93,46 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     setImageUrl(null);
 
     try {
-      const history = [...chat, { role: "user", content: query }].map(
-        (msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })
-      );
+      // ✅ Interceptar preguntas de HVO
+      if (isHvoQuestion(query)) {
+        if (!machineNo) {
+          setChat((old) => [
+            ...old,
+            {
+              role: "assistant",
+              content:
+                "Para poder comprobar si puede utilizar HVO, necesito el código completo de la máquina (el que viene en el QR). Escanea el QR para entrar o indícame el código completo.",
+            },
+          ]);
+          setLoading(false);
+          return;
+        }
+
+        let allowed = hvoStatusRef.current;
+
+        // Si aún no se ha consultado, consultamos
+        if (allowed === null) {
+          const data = await fetchMachineHvo(machineNo);
+          allowed = !!data?.hvoAllowed;
+          hvoStatusRef.current = allowed;
+        }
+
+        setChat((old) => [
+          ...old,
+          { role: "assistant", content: makeHvoMsgText(allowed) },
+        ]);
+
+        setLoading(false);
+        return; // 👈 NO llamamos a /ask
+      }
+
+      // ------------------------------
+      // Flujo normal (manuales / GPT)
+      // ------------------------------
+      const history = [...chat, { role: "user", content: query }].map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
 
       const res = await fetchManualAnswer({
         folder: machineFolder,
@@ -152,37 +144,21 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
       setChat((old) => [...old, { role: "assistant", content: res.answer }]);
       setProbId(res.probId || null);
-      setImageUrl(
-        res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null
-      );
+      setImageUrl(res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null);
     } catch (err) {
       setError("❌ Error: " + (err.message || "No se pudo conectar"));
     }
+
     setLoading(false);
   };
 
   const clearChat = () => {
-    const base = [
-      {
-        role: "assistant",
-        content: introText,
-      },
-    ];
-
-    // ✅ Si ya se determinó HVO (true o false), lo volvemos a poner
-    if (machineNo && hvoStatusRef.current !== null) {
-      base.push({
-        role: "assistant",
-        content: makeHvoMsgText(hvoStatusRef.current),
-        tag: "hvo",
-      });
-    }
-
-    setChat(base);
+    setChat([{ role: "assistant", content: introText }]);
     setInput("");
     setError(null);
     setImageUrl(null);
     setProbId(null);
+    // No limpiamos el cache HVO (así si preguntan después, no vuelve a consultar)
   };
 
   return (
@@ -195,16 +171,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         backgroundSize: "cover",
       }}
     >
-      {/* Espaciador superior: se calcula distinto en iOS / Android */}
       <div style={{ height: headerOffset, flexShrink: 0 }} />
 
-      {/* HEADER IGUAL AL DE MachineSelection, SIN FLECHA */}
-      <div
-        className="header-selection"
-        style={{ display: "flex", alignItems: "center" }}
-      >
-        <div style={{ width: 42 }} />{" "}
-        {/* Espacio a la izquierda, por simetría visual */}
+      <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ width: 42 }} />
         <div className="title-header" style={{ flex: 1, textAlign: "center" }}>
           Chatea con{" "}
           <span className="brand">
@@ -227,15 +197,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         />
       </div>
 
-      {/* ZONA CENTRAL DEL CHAT – esta es la que tiene scroll */}
       <div className="chat-area">
         <div className="chat-messages">
           {chat.map((msg, i) => (
-            <ChatBubble
-              key={i}
-              message={msg.content}
-              isUser={msg.role === "user"}
-            />
+            <ChatBubble key={i} message={msg.content} isUser={msg.role === "user"} />
           ))}
           {loading && <ChatBubble message="Pensando..." isUser={false} />}
           {error && <ChatBubble message={error} isUser={false} />}
@@ -253,7 +218,6 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         </div>
       </div>
 
-      {/* BARRA DE INPUT – diseño que te gustaba */}
       <div
         className="chat-input-row"
         style={{
@@ -284,13 +248,8 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
             boxSizing: "border-box",
           }}
         />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             className="chat-clear"
             onClick={clearChat}
@@ -311,14 +270,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
             <img
               src="/assets/refrescarNegro.png"
               alt="Limpiar"
-              style={{
-                width: 30,
-                height: 30,
-                objectFit: "contain",
-                display: "block",
-              }}
+              style={{ width: 30, height: 30, objectFit: "contain", display: "block" }}
             />
           </button>
+
           <button
             className="chat-send"
             style={{
