@@ -6,9 +6,10 @@ import { fetchManualAnswer, fetchMachineHvo } from "../helpers/api";
 export default function Chat({ machineFolder, machineNo, onBack }) {
   const introText = `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`;
 
-  const hvoMsgText = machineNo
-    ? `La maquina ${machineNo} puede utilizar el aceite HVO.`
-    : null;
+  const makeHvoMsgText = (allowed) =>
+    allowed
+      ? `La maquina ${machineNo} puede utilizar el aceite HVO.`
+      : `La maquina ${machineNo} no puede utilizar el aceite HVO.`;
 
   const [chat, setChat] = useState([
     {
@@ -23,7 +24,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   const [imageUrl, setImageUrl] = useState(null);
 
   const scrollRef = useRef();
-  const hvoAllowedRef = useRef(false);
+  const hvoStatusRef = useRef(null); // null = desconocido, true/false = decidido
 
   const sessionId = getSessionId();
 
@@ -60,7 +61,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     }
   }, []);
 
-  // ✅ NUEVO: comprobar HVO al entrar (si hay machineNo)
+  // ✅ NUEVO: comprobar HVO al entrar (si hay machineNo) y mostrar SIEMPRE el mensaje (positivo o negativo)
   useEffect(() => {
     let cancelled = false;
 
@@ -71,21 +72,23 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         const data = await fetchMachineHvo(machineNo);
         if (cancelled) return;
 
-        if (data && data.hvoAllowed) {
-          hvoAllowedRef.current = true;
+        const allowed = !!data?.hvoAllowed; // true si puede, false si no (incluye "no sale en el servicio")
+        hvoStatusRef.current = allowed;
 
-          setChat((old) => {
-            // Evitar duplicados
-            if (old.some((m) => (m.content || "").includes("aceite HVO")))
-              return old;
+        setChat((old) => {
+          // Quitamos cualquier mensaje anterior HVO (por si re-render / cambios)
+          const withoutHvo = old.filter((m) => m.tag !== "hvo");
 
-            const msg = { role: "assistant", content: hvoMsgText };
+          const msg = {
+            role: "assistant",
+            content: makeHvoMsgText(allowed),
+            tag: "hvo",
+          };
 
-            // Insertar justo debajo del primer mensaje del bot
-            if (old.length <= 1) return [...old, msg];
-            return [old[0], msg, ...old.slice(1)];
-          });
-        }
+          // Insertar justo debajo del primer mensaje del bot
+          if (withoutHvo.length <= 1) return [...withoutHvo, msg];
+          return [withoutHvo[0], msg, ...withoutHvo.slice(1)];
+        });
       } catch (e) {
         // Silencioso: si falla el servicio, no rompemos el chat
         console.warn("No se pudo comprobar HVO:", e.message);
@@ -96,7 +99,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     return () => {
       cancelled = true;
     };
-  }, [machineNo, hvoMsgText]);
+  }, [machineNo]);
 
   // Siempre que cambie el chat o la imagen, hacemos scroll al final
   useEffect(() => {
@@ -166,9 +169,13 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       },
     ];
 
-    // ✅ NUEVO: si HVO estaba permitido, reinsertarlo al limpiar
-    if (hvoAllowedRef.current && hvoMsgText) {
-      base.push({ role: "assistant", content: hvoMsgText });
+    // ✅ Si ya se determinó HVO (true o false), lo volvemos a poner
+    if (machineNo && hvoStatusRef.current !== null) {
+      base.push({
+        role: "assistant",
+        content: makeHvoMsgText(hvoStatusRef.current),
+        tag: "hvo",
+      });
     }
 
     setChat(base);
