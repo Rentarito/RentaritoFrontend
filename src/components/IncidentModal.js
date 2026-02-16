@@ -66,11 +66,7 @@ export default function IncidentModal({
 
   if (!open) return null;
 
-  // ✅ Escala global (reduce todo un poco).
-  // Puedes bajar a 0.88 si quieres todavía más pequeño.
-  const S = 0.92;
-
-  const px = (n) => Math.round(n * S);
+  const SIDE_PAD = 20;
 
   return (
     <div
@@ -86,61 +82,67 @@ export default function IncidentModal({
     >
       <div
         style={{
-          // ✅ baja el contenido para que “AVERÍA” no quede debajo del header de la app
-          padding: `${px(52)}px ${px(18)}px ${px(180)}px ${px(18)}px`,
+          // ✅ Baja todo para que el header de tu APP no tape "AVERÍA"
+          // Ajusta 56px -> 64px si tu header es más alto
+          paddingTop: "calc(56px + env(safe-area-inset-top))",
+          paddingRight: SIDE_PAD,
+          paddingLeft: SIDE_PAD,
+          paddingBottom: 180,
           maxWidth: 760,
           margin: "0 auto",
           boxSizing: "border-box",
         }}
       >
-        {/* ✅ TÍTULO AVERÍA CON RECUADRO BLANCO */}
+        {/* ✅ Encabezado AVERÍA como el original: franja blanca (full dentro del contenedor) */}
         <div
           style={{
             background: "#ffffff",
-            borderRadius: 14,
-            padding: `${px(14)}px ${px(16)}px`,
-            boxShadow: "0 1px 0 rgba(0,0,0,0.06)",
-            margin: `0 0 ${px(22)}px 0`,
+            marginLeft: -SIDE_PAD,
+            marginRight: -SIDE_PAD,
+            padding: "14px 20px",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            marginBottom: 22,
           }}
         >
-          <div
+          <h1
             style={{
-              fontSize: px(26),
+              fontSize: 30, // ✅ más parecido al original
               fontWeight: 900,
               letterSpacing: "0.5px",
+              margin: 0,
               color: "#1a1a1a",
             }}
           >
             AVERÍA
-          </div>
+          </h1>
         </div>
 
         {/* Código de máquina */}
-        <div style={{ marginBottom: px(22) }}>
+        <div style={{ marginBottom: 24 }}>
           <label
             style={{
               display: "block",
-              fontSize: px(16),
+              fontSize: 16,
               fontWeight: 500,
-              marginBottom: px(8),
+              marginBottom: 8,
               color: "#1a1a1a",
             }}
           >
             Código de máquina
           </label>
 
-          <div style={{ display: "flex", gap: px(10), alignItems: "stretch" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
             <input
               value={machineNo}
               onChange={(e) => setMachineNo(e.target.value)}
               placeholder="Escribe o Escanea el código"
               style={{
                 flex: 1,
-                height: px(44),
+                height: 48,
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: `0 ${px(14)}px`,
-                fontSize: px(15),
+                padding: "0 16px",
+                fontSize: 15,
                 outline: "none",
                 background: "#fff",
                 boxSizing: "border-box",
@@ -152,16 +154,24 @@ export default function IncidentModal({
               type="button"
               onClick={() => console.log("Escanear")}
               style={{
-                width: "min(160px, 40vw)", // ✅ responsive
-                height: px(44),
+                width: "min(160px, 42vw)",
+                height: 48,
                 borderRadius: 12,
                 border: "none",
-                background: "#3b82f6",
+                background: "#0198f1",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
                 flexShrink: 0,
+
+                // ✅ CLAVE para alinear perfecto con el input (evita estilos por defecto del botón)
+                padding: 0,
+                margin: 0,
+                lineHeight: 0,
+                boxSizing: "border-box",
+                appearance: "none",
+                WebkitAppearance: "none",
               }}
               title="Escanear"
             >
@@ -171,20 +181,20 @@ export default function IncidentModal({
         </div>
 
         {/* Grupo de Máquinas */}
-        <div style={{ marginBottom: px(22) }}>
+        <div style={{ marginBottom: 24 }}>
           <label
             style={{
               display: "block",
-              fontSize: px(16),
+              fontSize: 16,
               fontWeight: 500,
-              marginBottom: px(8),
+              marginBottom: 8,
               color: "#1a1a1a",
             }}
           >
             Grupo de Máquinas
           </label>
 
-          <div style={{ display: "flex", gap: px(10) }}>
+          <div style={{ display: "flex", gap: 12 }}>
             <select
               value={machineGroupSelect}
               onChange={(e) => {
@@ -193,11 +203,11 @@ export default function IncidentModal({
               }}
               style={{
                 flex: 1,
-                height: px(44),
+                height: 48,
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: `0 ${px(12)}px`,
-                fontSize: px(15),
+                padding: "0 14px",
+                fontSize: 15,
                 outline: "none",
                 background: "#fff",
                 color: machineGroupSelect ? "#1a1a1a" : "#9ca3af",
@@ -219,11 +229,11 @@ export default function IncidentModal({
               placeholder="Grupo de Máquina"
               style={{
                 flex: 1,
-                height: px(44),
+                height: 48,
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: `0 ${px(14)}px`,
-                fontSize: px(15),
+                padding: "0 16px",
+                fontSize: 15,
                 outline: "none",
                 background: "#fff",
                 boxSizing: "border-box",
@@ -234,17 +244,17 @@ export default function IncidentModal({
         </div>
 
         {/* Subida de archivos */}
-        <div style={{ marginBottom: px(22) }}>
+        <div style={{ marginBottom: 24 }}>
           <div
             style={{
-              minHeight: px(44),
+              minHeight: 48,
               borderRadius: 12,
               border: "1px solid #d1d5db",
               background: "#fff",
               display: "flex",
               alignItems: "center",
-              padding: `${px(10)}px ${px(14)}px`,
-              gap: px(10),
+              padding: "12px 16px",
+              gap: 12,
               boxSizing: "border-box",
             }}
           >
@@ -252,13 +262,13 @@ export default function IncidentModal({
               style={{
                 border: "1px solid #6b7280",
                 borderRadius: 6,
-                padding: `${px(7)}px ${px(12)}px`,
+                padding: "8px 14px",
                 cursor: "pointer",
                 background: "#f3f4f6",
                 fontWeight: 600,
                 whiteSpace: "nowrap",
                 flexShrink: 0,
-                fontSize: px(14),
+                fontSize: 14,
                 color: "#1a1a1a",
               }}
             >
@@ -269,13 +279,11 @@ export default function IncidentModal({
                 style={{ display: "none" }}
                 onChange={(e) => {
                   const count = e.target.files?.length || 0;
-                  setFilesLabel(
-                    count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado"
-                  );
+                  setFilesLabel(count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado");
                 }}
               />
             </label>
-            <div style={{ color: "#6b7280", fontSize: px(14), flexGrow: 1 }}>
+            <div style={{ color: "#6b7280", fontSize: 14, flexGrow: 1 }}>
               {filesLabel}
             </div>
           </div>
@@ -286,14 +294,14 @@ export default function IncidentModal({
           type="button"
           onClick={() => console.log("Añadir máquina")}
           style={{
-            marginBottom: px(28),
+            marginBottom: 34,
             width: "100%",
-            height: px(44),
-            borderRadius: px(22),
+            height: 48,
+            borderRadius: 24,
             border: "none",
-            background: "#3b82f6",
+            background: "#0198f1",
             color: "white",
-            fontSize: px(15),
+            fontSize: 15,
             fontWeight: 800,
             letterSpacing: "0.5px",
             cursor: "pointer",
@@ -302,40 +310,35 @@ export default function IncidentModal({
           AÑADIR MÁQUINA
         </button>
 
-        {/* ✅ INFORMACIÓN DE CONTACTO CON RECUADRO BLANCO */}
+        {/* ✅ Encabezado INFORMACIÓN DE CONTACTO como el original: franja blanca */}
         <div
           style={{
             background: "#ffffff",
-            borderRadius: 14,
-            padding: `${px(16)}px ${px(16)}px`,
-            boxShadow: "0 1px 0 rgba(0,0,0,0.06)",
-            marginBottom: px(18),
-            textAlign: "center",
+            marginLeft: -SIDE_PAD,
+            marginRight: -SIDE_PAD,
+            padding: "18px 20px",
+            borderTop: "1px solid rgba(0,0,0,0.04)",
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            marginBottom: 22,
           }}
         >
-          <div
+          <h2
             style={{
-              fontSize: px(22),
+              fontSize: 28,
               fontWeight: 900,
-              letterSpacing: "0.5px",
+              letterSpacing: "0.6px",
+              margin: 0,
               color: "#1a1a1a",
+              textAlign: "center",
             }}
           >
             INFORMACIÓN DE CONTACTO
-          </div>
+          </h2>
         </div>
 
         {/* Nombre */}
-        <div style={{ marginBottom: px(18) }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: px(16),
-              fontWeight: 500,
-              marginBottom: px(8),
-              color: "#1a1a1a",
-            }}
-          >
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
             Nombre <span style={{ color: "#dc2626" }}>*</span>
           </label>
           <input
@@ -344,11 +347,11 @@ export default function IncidentModal({
             placeholder="Nombre"
             style={{
               width: "100%",
-              height: px(44),
+              height: 48,
               borderRadius: 12,
               border: "1px solid #d1d5db",
-              padding: `0 ${px(14)}px`,
-              fontSize: px(15),
+              padding: "0 16px",
+              fontSize: 15,
               outline: "none",
               background: "#fff",
               boxSizing: "border-box",
@@ -358,16 +361,8 @@ export default function IncidentModal({
         </div>
 
         {/* Teléfono */}
-        <div style={{ marginBottom: px(18) }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: px(16),
-              fontWeight: 500,
-              marginBottom: px(8),
-              color: "#1a1a1a",
-            }}
-          >
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
             Telefono <span style={{ color: "#dc2626" }}>*</span>
           </label>
           <input
@@ -376,11 +371,11 @@ export default function IncidentModal({
             placeholder="974444444"
             style={{
               width: "100%",
-              height: px(44),
+              height: 48,
               borderRadius: 12,
               border: "1px solid #d1d5db",
-              padding: `0 ${px(14)}px`,
-              fontSize: px(15),
+              padding: "0 16px",
+              fontSize: 15,
               outline: "none",
               background: "#fff",
               boxSizing: "border-box",
@@ -390,16 +385,8 @@ export default function IncidentModal({
         </div>
 
         {/* Email */}
-        <div style={{ marginBottom: px(18) }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: px(16),
-              fontWeight: 500,
-              marginBottom: px(8),
-              color: "#1a1a1a",
-            }}
-          >
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
             Email <span style={{ color: "#dc2626" }}>*</span>
           </label>
           <input
@@ -408,11 +395,11 @@ export default function IncidentModal({
             placeholder="Email"
             style={{
               width: "100%",
-              height: px(44),
+              height: 48,
               borderRadius: 12,
               border: "1px solid #d1d5db",
-              padding: `0 ${px(14)}px`,
-              fontSize: px(15),
+              padding: "0 16px",
+              fontSize: 15,
               outline: "none",
               background: "#fff",
               boxSizing: "border-box",
@@ -422,33 +409,23 @@ export default function IncidentModal({
         </div>
 
         {/* Fecha y Hora */}
-        <div
-          style={{
-            marginTop: px(14),
-            marginBottom: px(10),
-            color: "#6b7280",
-            fontStyle: "italic",
-            fontSize: px(13),
-          }}
-        >
+        <div style={{ marginTop: 14, marginBottom: 10, color: "#6b7280", fontStyle: "italic", fontSize: 13 }}>
           Fecha y Hora de la solicitud (esto se realiza automaticamente)
         </div>
 
-        <div style={{ display: "flex", gap: px(10), marginBottom: px(18) }}>
+        <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ color: "#9ca3af", fontSize: px(14), marginBottom: px(6), fontWeight: 500 }}>
-              Fecha
-            </div>
+            <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Fecha</div>
             <input
               value={formatDate(now)}
               disabled
               style={{
                 width: "100%",
-                height: px(44),
+                height: 48,
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: `0 ${px(14)}px`,
-                fontSize: px(15),
+                padding: "0 16px",
+                fontSize: 15,
                 background: "#f3f4f6",
                 color: "#6b7280",
                 boxSizing: "border-box",
@@ -457,19 +434,17 @@ export default function IncidentModal({
           </div>
 
           <div style={{ flex: 1 }}>
-            <div style={{ color: "#9ca3af", fontSize: px(14), marginBottom: px(6), fontWeight: 500 }}>
-              Hora
-            </div>
+            <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Hora</div>
             <input
               value={formatTime(now)}
               disabled
               style={{
                 width: "100%",
-                height: px(44),
+                height: 48,
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: `0 ${px(14)}px`,
-                fontSize: px(15),
+                padding: "0 16px",
+                fontSize: 15,
                 background: "#f3f4f6",
                 color: "#6b7280",
                 boxSizing: "border-box",
@@ -479,16 +454,8 @@ export default function IncidentModal({
         </div>
 
         {/* Comentarios */}
-        <div style={{ marginBottom: px(18) }}>
-          <label
-            style={{
-              display: "block",
-              fontSize: px(16),
-              fontWeight: 500,
-              marginBottom: px(8),
-              color: "#1a1a1a",
-            }}
-          >
+        <div style={{ marginBottom: 18 }}>
+          <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
             Comentarios
           </label>
           <textarea
@@ -496,11 +463,11 @@ export default function IncidentModal({
             onChange={(e) => setComments(e.target.value)}
             style={{
               width: "100%",
-              minHeight: px(130),
+              minHeight: 130,
               borderRadius: 12,
               border: "1px solid #d1d5db",
-              padding: `${px(12)}px ${px(14)}px`,
-              fontSize: px(15),
+              padding: "12px 16px",
+              fontSize: 15,
               outline: "none",
               background: "#fff",
               resize: "vertical",
@@ -516,8 +483,8 @@ export default function IncidentModal({
           style={{
             display: "flex",
             alignItems: "center",
-            gap: px(10),
-            fontSize: px(16),
+            gap: 10,
+            fontSize: 16,
             fontWeight: 500,
             cursor: "pointer",
             color: "#1a1a1a",
@@ -527,11 +494,7 @@ export default function IncidentModal({
             type="checkbox"
             checked={saveInfo}
             onChange={(e) => setSaveInfo(e.target.checked)}
-            style={{
-              width: px(20),
-              height: px(20),
-              cursor: "pointer",
-            }}
+            style={{ width: 20, height: 20, cursor: "pointer" }}
           />
           Guardar Informacion
         </label>
@@ -544,7 +507,7 @@ export default function IncidentModal({
           left: 0,
           right: 0,
           bottom: 0,
-          padding: `${px(14)}px ${px(18)}px calc(${px(18)}px + env(safe-area-inset-bottom)) ${px(18)}px`,
+          padding: "16px 20px calc(20px + env(safe-area-inset-bottom)) 20px",
           background: "linear-gradient(180deg, rgba(248,249,250,0) 0%, #f8f9fa 30%)",
           boxSizing: "border-box",
         }}
@@ -555,12 +518,12 @@ export default function IncidentModal({
             onClick={() => console.log("Enviar incidencia")}
             style={{
               width: "100%",
-              height: px(44),
-              borderRadius: px(22),
+              height: 48,
+              borderRadius: 24,
               border: "none",
-              background: "#1e40af",
+              background: "#0198f1",
               color: "white",
-              fontSize: px(15),
+              fontSize: 15,
               fontWeight: 800,
               letterSpacing: "0.5px",
               cursor: "pointer",
