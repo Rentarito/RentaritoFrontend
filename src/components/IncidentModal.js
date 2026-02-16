@@ -99,8 +99,7 @@ export default function IncidentModal({
             background: "#ffffff",
             marginLeft: -SIDE_PAD,
             marginRight: -SIDE_PAD,
-            padding: "14px 20px",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            padding: "22px 24px",
             marginBottom: 22,
           }}
         >
@@ -316,9 +315,7 @@ export default function IncidentModal({
             background: "#ffffff",
             marginLeft: -SIDE_PAD,
             marginRight: -SIDE_PAD,
-            padding: "18px 20px",
-            borderTop: "1px solid rgba(0,0,0,0.04)",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            padding: "22px 24px",
             marginBottom: 22,
           }}
         >
