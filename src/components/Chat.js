@@ -3,6 +3,12 @@ import ChatBubble from "./ChatBubble";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchManualAnswer, fetchMachineHvo, fetchMachineHvoByFleet } from "../helpers/api";
 
+// ✅ Detecta respuestas del bot "sin solución"
+const NO_SOLUTION_REGEX =
+  /(no (tengo|dispongo).*informaci[oó]n)|(no he encontrado.*(soluci[oó]n|respuesta))|(no (encuentro|puedo encontrar))|(no.*en el manual)|(no.*puedo ayudarte.*con (eso|esa))/i;
+
+const shouldShowCreateIncident = (text) => NO_SOLUTION_REGEX.test(text || "");
+
 export default function Chat({ machineFolder, machineNo, onBack }) {
   const introText = `¡Hola, soy RentAIrito! Bienvenido al asistente virtual de Rentaire.\n\nEsta conversación será guardada en nuestra base de datos para poder mejorar la calidad de nuestras respuestas y darte una mejor experiencia.\n\n¿En qué puedo ayudarte en relación a "${machineFolder}"?`;
 
@@ -26,7 +32,11 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     return m ? m[0] : null;
   };
 
-  const [chat, setChat] = useState([{ role: "assistant", content: introText }]);
+  // ✅ Cambiamos chat para que cada mensaje pueda llevar "showCreateIncident"
+  const [chat, setChat] = useState([
+    { role: "assistant", content: introText, showCreateIncident: false },
+  ]);
+
   const [input, setInput] = useState("");
   const [probId, setProbId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -86,12 +96,26 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [onBack]);
 
+  // ✅ placeholder de momento (luego le damos funcionalidad)
+  const handleCreateIncident = (botMessageText) => {
+    console.log("Crear incidencia (pendiente)", {
+      machineFolder,
+      machineNo,
+      botMessageText,
+      sessionId,
+      probId,
+    });
+  };
+
   const sendMessage = async () => {
     const query = input.trim();
     if (!query) return;
 
     setInput("");
-    setChat((old) => [...old, { role: "user", content: query }]);
+    setChat((old) => [
+      ...old,
+      { role: "user", content: query, showCreateIncident: false },
+    ]);
     setLoading(true);
     setError(null);
     setImageUrl(null);
@@ -104,7 +128,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         const fleetNumber = extractFleetNumber(query);
 
         if (!fleetNumber) {
-          setChat((old) => [...old, { role: "assistant", content: fleetAskText }]);
+          setChat((old) => [
+            ...old,
+            { role: "assistant", content: fleetAskText, showCreateIncident: false },
+          ]);
           setLoading(false);
           return;
         }
@@ -126,8 +153,9 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
             {
               role: "assistant",
               content: `Ese codigo de flota ${fleetNumber} no existe para ${machineFolder}. Revisa el numero y vuelve a enviarlo.`,
+              showCreateIncident: false,
             },
-            { role: "assistant", content: fleetAskText },
+            { role: "assistant", content: fleetAskText, showCreateIncident: false },
           ]);
           setLoading(false);
           return;
@@ -143,8 +171,9 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
               content:
                 `He encontrado más de una máquina cuyo código de flota termina en ${fleetNumber}. ` +
                 `Por favor, escribe más dígitos o el código completo si lo tienes.`,
+              showCreateIncident: false,
             },
-            { role: "assistant", content: fleetAskText },
+            { role: "assistant", content: fleetAskText, showCreateIncident: false },
           ]);
           setLoading(false);
           return;
@@ -159,6 +188,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
           {
             role: "assistant",
             content: makeHvoMsgText(allowed, `${machineFolder} (${fleetNumber})`),
+            showCreateIncident: false,
           },
         ]);
 
@@ -184,7 +214,11 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
           setChat((old) => [
             ...old,
-            { role: "assistant", content: makeHvoMsgText(allowed, machineNo) },
+            {
+              role: "assistant",
+              content: makeHvoMsgText(allowed, machineNo),
+              showCreateIncident: false,
+            },
           ]);
           setLoading(false);
           return;
@@ -192,7 +226,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
         // 2B) Entró por lista: pedir flota
         waitingFleetRef.current = true;
-        setChat((old) => [...old, { role: "assistant", content: fleetAskText }]);
+        setChat((old) => [
+          ...old,
+          { role: "assistant", content: fleetAskText, showCreateIncident: false },
+        ]);
         setLoading(false);
         return;
       }
@@ -213,7 +250,18 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         sessionId,
       });
 
-      setChat((old) => [...old, { role: "assistant", content: res.answer }]);
+      // ✅ Aquí marcamos si el bot no encontró solución
+      const botText = res.answer;
+
+      setChat((old) => [
+        ...old,
+        {
+          role: "assistant",
+          content: botText,
+          showCreateIncident: shouldShowCreateIncident(botText),
+        },
+      ]);
+
       setProbId(res.probId || null);
       setImageUrl(res.imageUrls && res.imageUrls.length ? res.imageUrls[0] : null);
     } catch (err) {
@@ -224,7 +272,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   };
 
   const clearChat = () => {
-    setChat([{ role: "assistant", content: introText }]);
+    setChat([{ role: "assistant", content: introText, showCreateIncident: false }]);
     setInput("");
     setError(null);
     setImageUrl(null);
@@ -271,10 +319,18 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       <div className="chat-area">
         <div className="chat-messages">
           {chat.map((msg, i) => (
-            <ChatBubble key={i} message={msg.content} isUser={msg.role === "user"} />
+            <ChatBubble
+              key={i}
+              message={msg.content}
+              isUser={msg.role === "user"}
+              showCreateIncident={!!msg.showCreateIncident}
+              onCreateIncident={() => handleCreateIncident(msg.content)}
+            />
           ))}
+
           {loading && <ChatBubble message="Pensando..." isUser={false} />}
           {error && <ChatBubble message={error} isUser={false} />}
+
           {imageUrl && (
             <div className="chat-image-container">
               <img
@@ -285,6 +341,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
               />
             </div>
           )}
+
           <div ref={scrollRef} />
         </div>
       </div>

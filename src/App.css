@@ -413,3 +413,18 @@ html, body, #root {
   font-family: Cambria, "Times New Roman", Times, serif !important;
   font-weight: normal !important;
 }
+
+.create-incident-btn {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #ffb366;
+  background: #ffe6cc;
+  color: #8a4b00;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.create-incident-btn:hover {
+  background: #ffd9b3;
+}

@@ -1,44 +1,78 @@
 import React from "react";
 
-export default function ChatBubble({ message, isUser }) {
+export default function ChatBubble({ message, isUser, showCreateIncident = false, onCreateIncident }) {
   // Renderiza el contenido, envolviendo "RentAIrito" solo en mensajes del bot
   const renderMessage = () => {
-    if (typeof message !== "string") return message;   // por si algún día pasas JSX
-    if (isUser) return message;                        // no tocamos mensajes del usuario
+    if (typeof message !== "string") return message; // por si algún día pasas JSX
+    if (isUser) return message; // no tocamos mensajes del usuario
 
     // Divide y envuelve cada ocurrencia exacta de "RentAIrito"
     return message.split(/(RentAIrito)/g).map((part, i) =>
-      part === "RentAIrito"
-        ? <span key={i} className="cambria-text">RentAIrito</span>
-        : part
+      part === "RentAIrito" ? (
+        <span key={i} className="cambria-text">
+          RentAIrito
+        </span>
+      ) : (
+        part
+      )
     );
   };
 
   return (
     <div
-      className={`chat-bubble ${isUser ? "user-bubble" : "bot-bubble"}`}
       style={{
         display: "flex",
-        justifyContent: isUser ? "flex-end" : "flex-start",
+        flexDirection: "column",
+        alignItems: isUser ? "flex-end" : "flex-start",
         margin: "6px 0",
       }}
     >
       <div
+        className={`chat-bubble ${isUser ? "user-bubble" : "bot-bubble"}`}
         style={{
-          background: isUser ? "#c7e0fb" : "#0198f1",
-          color: isUser ? "#25416A" : "#fff",
-          borderRadius: 18,
-          padding: "12px 18px",
-          maxWidth: 320,
-          fontSize: 15,
-          fontWeight: 400,
-          boxShadow: isUser ? "0 2px 7px #bdd7ee" : "0 2px 7px #d1e3ff",
-          alignSelf: isUser ? "flex-end" : "flex-start",
-          whiteSpace: "pre-line",
+          display: "flex",
+          justifyContent: isUser ? "flex-end" : "flex-start",
+          width: "100%",
         }}
       >
-        {renderMessage()}
+        <div
+          style={{
+            background: isUser ? "#c7e0fb" : "#0198f1",
+            color: isUser ? "#25416A" : "#fff",
+            borderRadius: 18,
+            padding: "12px 18px",
+            maxWidth: 320,
+            fontSize: 15,
+            fontWeight: 400,
+            boxShadow: isUser ? "0 2px 7px #bdd7ee" : "0 2px 7px #d1e3ff",
+            alignSelf: isUser ? "flex-end" : "flex-start",
+            whiteSpace: "pre-line",
+          }}
+        >
+          {renderMessage()}
+        </div>
       </div>
+
+      {/* ✅ Botón solo en mensajes del bot marcados como “sin solución” */}
+      {!isUser && showCreateIncident && (
+        <button
+          type="button"
+          onClick={onCreateIncident || (() => console.log("Crear incidencia (pendiente)"))}
+          style={{
+            marginTop: 8,
+            borderRadius: 12,
+            padding: "10px 12px",
+            border: "1px solid #ffb366",
+            background: "#ffe6cc",
+            color: "#8a4b00",
+            fontWeight: 700,
+            cursor: "pointer",
+            maxWidth: 320,
+          }}
+        >
+          Crear incidencia
+        </button>
+      )}
     </div>
   );
 }
