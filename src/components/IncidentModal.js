@@ -84,7 +84,7 @@ export default function IncidentModal({
         style={{
           // ✅ Baja todo para que el header de tu APP no tape "AVERÍA"
           // Ajusta 56px -> 64px si tu header es más alto
-          paddingTop: "calc(56px + env(safe-area-inset-top))",
+          paddingTop: "calc(48px + env(safe-area-inset-top))",
           paddingRight: SIDE_PAD,
           paddingLeft: SIDE_PAD,
           paddingBottom: 180,
@@ -106,7 +106,7 @@ export default function IncidentModal({
         >
           <h1
             style={{
-              fontSize: 30, // ✅ más parecido al original
+              fontSize: 20, // ✅ más parecido al original
               fontWeight: 900,
               letterSpacing: "0.5px",
               margin: 0,
@@ -324,7 +324,7 @@ export default function IncidentModal({
         >
           <h2
             style={{
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: 900,
               letterSpacing: "0.6px",
               margin: 0,
