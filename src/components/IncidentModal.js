@@ -84,7 +84,7 @@ export default function IncidentModal({
         style={{
           // ✅ Baja todo para que el header de tu APP no tape "AVERÍA"
           // Ajusta 56px -> 64px si tu header es más alto
-          paddingTop: "calc(52px + env(safe-area-inset-top))",
+          paddingTop: "calc(54px + env(safe-area-inset-top))",
           paddingRight: SIDE_PAD,
           paddingLeft: SIDE_PAD,
           paddingBottom: 180,
@@ -329,7 +329,6 @@ export default function IncidentModal({
               letterSpacing: "0.6px",
               margin: 0,
               color: "#1a1a1a",
-              textAlign: "center",
             }}
           >
             INFORMACIÓN DE CONTACTO
