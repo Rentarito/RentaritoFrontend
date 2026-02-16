@@ -14,7 +14,7 @@ function formatTime(d) {
 
 function ScanIcon() {
   return (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M7 3H5a2 2 0 0 0-2 2v2" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <path d="M17 3h2a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2" strokeLinecap="round" />
       <path d="M7 21H5a2 2 0 0 1-2-2v-2" stroke="white" strokeWidth="2" strokeLinecap="round" />
@@ -66,6 +66,12 @@ export default function IncidentModal({
 
   if (!open) return null;
 
+  // ✅ Escala global (reduce todo un poco).
+  // Puedes bajar a 0.88 si quieres todavía más pequeño.
+  const S = 0.92;
+
+  const px = (n) => Math.round(n * S);
+
   return (
     <div
       style={{
@@ -80,52 +86,61 @@ export default function IncidentModal({
     >
       <div
         style={{
-          padding: "32px 20px 180px 20px", // ✅ Más padding-top para que se vea el título
+          // ✅ baja el contenido para que “AVERÍA” no quede debajo del header de la app
+          padding: `${px(52)}px ${px(18)}px ${px(180)}px ${px(18)}px`,
           maxWidth: 760,
           margin: "0 auto",
           boxSizing: "border-box",
         }}
       >
-        {/* Título AVERÍA - SIN fondo blanco */}
-        <h1
+        {/* ✅ TÍTULO AVERÍA CON RECUADRO BLANCO */}
+        <div
           style={{
-            fontSize: 28,
-            fontWeight: 900,
-            letterSpacing: "0.5px",
-            margin: "0 0 32px 0",
-            color: "#1a1a1a",
-            // ✅ Sin background
+            background: "#ffffff",
+            borderRadius: 14,
+            padding: `${px(14)}px ${px(16)}px`,
+            boxShadow: "0 1px 0 rgba(0,0,0,0.06)",
+            margin: `0 0 ${px(22)}px 0`,
           }}
         >
-          AVERÍA
-        </h1>
+          <div
+            style={{
+              fontSize: px(26),
+              fontWeight: 900,
+              letterSpacing: "0.5px",
+              color: "#1a1a1a",
+            }}
+          >
+            AVERÍA
+          </div>
+        </div>
 
         {/* Código de máquina */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: px(22) }}>
           <label
             style={{
               display: "block",
-              fontSize: 18,
+              fontSize: px(16),
               fontWeight: 500,
-              marginBottom: 10,
+              marginBottom: px(8),
               color: "#1a1a1a",
             }}
           >
             Código de máquina
           </label>
 
-          <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
+          <div style={{ display: "flex", gap: px(10), alignItems: "stretch" }}>
             <input
               value={machineNo}
               onChange={(e) => setMachineNo(e.target.value)}
               placeholder="Escribe o Escanea el código"
               style={{
                 flex: 1,
-                height: 48, // ✅ Reducido de 56 a 48
+                height: px(44),
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 16,
+                padding: `0 ${px(14)}px`,
+                fontSize: px(15),
                 outline: "none",
                 background: "#fff",
                 boxSizing: "border-box",
@@ -137,8 +152,8 @@ export default function IncidentModal({
               type="button"
               onClick={() => console.log("Escanear")}
               style={{
-                width: 160,
-                height: 48, // ✅ Reducido de 56 a 48
+                width: "min(160px, 40vw)", // ✅ responsive
+                height: px(44),
                 borderRadius: 12,
                 border: "none",
                 background: "#3b82f6",
@@ -156,20 +171,20 @@ export default function IncidentModal({
         </div>
 
         {/* Grupo de Máquinas */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: px(22) }}>
           <label
             style={{
               display: "block",
-              fontSize: 18,
+              fontSize: px(16),
               fontWeight: 500,
-              marginBottom: 10,
+              marginBottom: px(8),
               color: "#1a1a1a",
             }}
           >
             Grupo de Máquinas
           </label>
 
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: px(10) }}>
             <select
               value={machineGroupSelect}
               onChange={(e) => {
@@ -178,11 +193,11 @@ export default function IncidentModal({
               }}
               style={{
                 flex: 1,
-                height: 48, // ✅ Reducido de 56 a 48
+                height: px(44),
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: "0 14px",
-                fontSize: 16,
+                padding: `0 ${px(12)}px`,
+                fontSize: px(15),
                 outline: "none",
                 background: "#fff",
                 color: machineGroupSelect ? "#1a1a1a" : "#9ca3af",
@@ -204,11 +219,11 @@ export default function IncidentModal({
               placeholder="Grupo de Máquina"
               style={{
                 flex: 1,
-                height: 48, // ✅ Reducido de 56 a 48
+                height: px(44),
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 16,
+                padding: `0 ${px(14)}px`,
+                fontSize: px(15),
                 outline: "none",
                 background: "#fff",
                 boxSizing: "border-box",
@@ -219,17 +234,17 @@ export default function IncidentModal({
         </div>
 
         {/* Subida de archivos */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: px(22) }}>
           <div
             style={{
-              minHeight: 48, // ✅ Reducido de 56 a 48
+              minHeight: px(44),
               borderRadius: 12,
               border: "1px solid #d1d5db",
               background: "#fff",
               display: "flex",
               alignItems: "center",
-              padding: "12px 16px",
-              gap: 12,
+              padding: `${px(10)}px ${px(14)}px`,
+              gap: px(10),
               boxSizing: "border-box",
             }}
           >
@@ -237,13 +252,13 @@ export default function IncidentModal({
               style={{
                 border: "1px solid #6b7280",
                 borderRadius: 6,
-                padding: "8px 14px", // ✅ Ajustado padding
+                padding: `${px(7)}px ${px(12)}px`,
                 cursor: "pointer",
                 background: "#f3f4f6",
                 fontWeight: 600,
                 whiteSpace: "nowrap",
                 flexShrink: 0,
-                fontSize: 15,
+                fontSize: px(14),
                 color: "#1a1a1a",
               }}
             >
@@ -255,14 +270,12 @@ export default function IncidentModal({
                 onChange={(e) => {
                   const count = e.target.files?.length || 0;
                   setFilesLabel(
-                    count
-                      ? `${count} archivo(s) seleccionado(s)`
-                      : "Ningún archivo seleccionado"
+                    count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado"
                   );
                 }}
               />
             </label>
-            <div style={{ color: "#6b7280", fontSize: 15, flexGrow: 1 }}>
+            <div style={{ color: "#6b7280", fontSize: px(14), flexGrow: 1 }}>
               {filesLabel}
             </div>
           </div>
@@ -273,15 +286,15 @@ export default function IncidentModal({
           type="button"
           onClick={() => console.log("Añadir máquina")}
           style={{
-            marginBottom: 40,
+            marginBottom: px(28),
             width: "100%",
-            height: 48, // ✅ Reducido de 56 a 48
-            borderRadius: 24, // ✅ Ajustado para mantener proporción
+            height: px(44),
+            borderRadius: px(22),
             border: "none",
             background: "#3b82f6",
             color: "white",
-            fontSize: 16,
-            fontWeight: 700,
+            fontSize: px(15),
+            fontWeight: 800,
             letterSpacing: "0.5px",
             cursor: "pointer",
           }}
@@ -289,246 +302,239 @@ export default function IncidentModal({
           AÑADIR MÁQUINA
         </button>
 
-        {/* INFORMACIÓN DE CONTACTO - SIN fondo blanco */}
-        <div>
-          <h2
+        {/* ✅ INFORMACIÓN DE CONTACTO CON RECUADRO BLANCO */}
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 14,
+            padding: `${px(16)}px ${px(16)}px`,
+            boxShadow: "0 1px 0 rgba(0,0,0,0.06)",
+            marginBottom: px(18),
+            textAlign: "center",
+          }}
+        >
+          <div
             style={{
-              fontSize: 24,
+              fontSize: px(22),
               fontWeight: 900,
               letterSpacing: "0.5px",
-              marginBottom: 28,
               color: "#1a1a1a",
-              // ✅ Sin background
             }}
           >
             INFORMACIÓN DE CONTACTO
-          </h2>
-
-          {/* Nombre */}
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 18,
-                fontWeight: 500,
-                marginBottom: 10,
-                color: "#1a1a1a",
-              }}
-            >
-              Nombre <span style={{ color: "#dc2626" }}>*</span>
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre"
-              style={{
-                width: "100%",
-                height: 48, // ✅ Reducido de 56 a 48
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 16,
-                outline: "none",
-                background: "#fff",
-                boxSizing: "border-box",
-                color: "#1a1a1a",
-              }}
-            />
           </div>
+        </div>
 
-          {/* Teléfono */}
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 18,
-                fontWeight: 500,
-                marginBottom: 10,
-                color: "#1a1a1a",
-              }}
-            >
-              Telefono <span style={{ color: "#dc2626" }}>*</span>
-            </label>
-            <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="974444444"
-              style={{
-                width: "100%",
-                height: 48, // ✅ Reducido de 56 a 48
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 16,
-                outline: "none",
-                background: "#fff",
-                boxSizing: "border-box",
-                color: "#1a1a1a",
-              }}
-            />
-          </div>
-
-          {/* Email */}
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 18,
-                fontWeight: 500,
-                marginBottom: 10,
-                color: "#1a1a1a",
-              }}
-            >
-              Email <span style={{ color: "#dc2626" }}>*</span>
-            </label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              style={{
-                width: "100%",
-                height: 48, // ✅ Reducido de 56 a 48
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 16,
-                outline: "none",
-                background: "#fff",
-                boxSizing: "border-box",
-                color: "#1a1a1a",
-              }}
-            />
-          </div>
-
-          {/* Fecha y Hora */}
-          <div
-            style={{
-              marginTop: 20,
-              marginBottom: 12,
-              color: "#6b7280",
-              fontStyle: "italic",
-              fontSize: 14,
-            }}
-          >
-            Fecha y Hora de la solicitud (esto se realiza automaticamente)
-          </div>
-
-          <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  color: "#9ca3af",
-                  fontSize: 16,
-                  marginBottom: 8,
-                  fontWeight: 500,
-                }}
-              >
-                Fecha
-              </div>
-              <input
-                value={formatDate(now)}
-                disabled
-                style={{
-                  width: "100%",
-                  height: 48, // ✅ Reducido de 56 a 48
-                  borderRadius: 12,
-                  border: "1px solid #d1d5db",
-                  padding: "0 16px",
-                  fontSize: 16,
-                  background: "#f3f4f6",
-                  color: "#6b7280",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <div
-                style={{
-                  color: "#9ca3af",
-                  fontSize: 16,
-                  marginBottom: 8,
-                  fontWeight: 500,
-                }}
-              >
-                Hora
-              </div>
-              <input
-                value={formatTime(now)}
-                disabled
-                style={{
-                  width: "100%",
-                  height: 48, // ✅ Reducido de 56 a 48
-                  borderRadius: 12,
-                  border: "1px solid #d1d5db",
-                  padding: "0 16px",
-                  fontSize: 16,
-                  background: "#f3f4f6",
-                  color: "#6b7280",
-                  boxSizing: "border-box",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Comentarios */}
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 18,
-                fontWeight: 500,
-                marginBottom: 10,
-                color: "#1a1a1a",
-              }}
-            >
-              Comentarios
-            </label>
-            <textarea
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: 140,
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "14px 16px",
-                fontSize: 16,
-                outline: "none",
-                background: "#fff",
-                resize: "vertical",
-                boxSizing: "border-box",
-                fontFamily: "inherit",
-                color: "#1a1a1a",
-              }}
-            />
-          </div>
-
-          {/* Guardar información */}
+        {/* Nombre */}
+        <div style={{ marginBottom: px(18) }}>
           <label
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              fontSize: 18,
+              display: "block",
+              fontSize: px(16),
               fontWeight: 500,
-              cursor: "pointer",
+              marginBottom: px(8),
               color: "#1a1a1a",
             }}
           >
+            Nombre <span style={{ color: "#dc2626" }}>*</span>
+          </label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nombre"
+            style={{
+              width: "100%",
+              height: px(44),
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              padding: `0 ${px(14)}px`,
+              fontSize: px(15),
+              outline: "none",
+              background: "#fff",
+              boxSizing: "border-box",
+              color: "#1a1a1a",
+            }}
+          />
+        </div>
+
+        {/* Teléfono */}
+        <div style={{ marginBottom: px(18) }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: px(16),
+              fontWeight: 500,
+              marginBottom: px(8),
+              color: "#1a1a1a",
+            }}
+          >
+            Telefono <span style={{ color: "#dc2626" }}>*</span>
+          </label>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="974444444"
+            style={{
+              width: "100%",
+              height: px(44),
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              padding: `0 ${px(14)}px`,
+              fontSize: px(15),
+              outline: "none",
+              background: "#fff",
+              boxSizing: "border-box",
+              color: "#1a1a1a",
+            }}
+          />
+        </div>
+
+        {/* Email */}
+        <div style={{ marginBottom: px(18) }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: px(16),
+              fontWeight: 500,
+              marginBottom: px(8),
+              color: "#1a1a1a",
+            }}
+          >
+            Email <span style={{ color: "#dc2626" }}>*</span>
+          </label>
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            style={{
+              width: "100%",
+              height: px(44),
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              padding: `0 ${px(14)}px`,
+              fontSize: px(15),
+              outline: "none",
+              background: "#fff",
+              boxSizing: "border-box",
+              color: "#1a1a1a",
+            }}
+          />
+        </div>
+
+        {/* Fecha y Hora */}
+        <div
+          style={{
+            marginTop: px(14),
+            marginBottom: px(10),
+            color: "#6b7280",
+            fontStyle: "italic",
+            fontSize: px(13),
+          }}
+        >
+          Fecha y Hora de la solicitud (esto se realiza automaticamente)
+        </div>
+
+        <div style={{ display: "flex", gap: px(10), marginBottom: px(18) }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "#9ca3af", fontSize: px(14), marginBottom: px(6), fontWeight: 500 }}>
+              Fecha
+            </div>
             <input
-              type="checkbox"
-              checked={saveInfo}
-              onChange={(e) => setSaveInfo(e.target.checked)}
+              value={formatDate(now)}
+              disabled
               style={{
-                width: 22,
-                height: 22,
-                cursor: "pointer",
+                width: "100%",
+                height: px(44),
+                borderRadius: 12,
+                border: "1px solid #d1d5db",
+                padding: `0 ${px(14)}px`,
+                fontSize: px(15),
+                background: "#f3f4f6",
+                color: "#6b7280",
+                boxSizing: "border-box",
               }}
             />
-            Guardar Informacion
-          </label>
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <div style={{ color: "#9ca3af", fontSize: px(14), marginBottom: px(6), fontWeight: 500 }}>
+              Hora
+            </div>
+            <input
+              value={formatTime(now)}
+              disabled
+              style={{
+                width: "100%",
+                height: px(44),
+                borderRadius: 12,
+                border: "1px solid #d1d5db",
+                padding: `0 ${px(14)}px`,
+                fontSize: px(15),
+                background: "#f3f4f6",
+                color: "#6b7280",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
         </div>
+
+        {/* Comentarios */}
+        <div style={{ marginBottom: px(18) }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: px(16),
+              fontWeight: 500,
+              marginBottom: px(8),
+              color: "#1a1a1a",
+            }}
+          >
+            Comentarios
+          </label>
+          <textarea
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+            style={{
+              width: "100%",
+              minHeight: px(130),
+              borderRadius: 12,
+              border: "1px solid #d1d5db",
+              padding: `${px(12)}px ${px(14)}px`,
+              fontSize: px(15),
+              outline: "none",
+              background: "#fff",
+              resize: "vertical",
+              boxSizing: "border-box",
+              fontFamily: "inherit",
+              color: "#1a1a1a",
+            }}
+          />
+        </div>
+
+        {/* Guardar información */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: px(10),
+            fontSize: px(16),
+            fontWeight: 500,
+            cursor: "pointer",
+            color: "#1a1a1a",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={saveInfo}
+            onChange={(e) => setSaveInfo(e.target.checked)}
+            style={{
+              width: px(20),
+              height: px(20),
+              cursor: "pointer",
+            }}
+          />
+          Guardar Informacion
+        </label>
       </div>
 
       {/* Botón ENVIAR fijo */}
@@ -538,7 +544,7 @@ export default function IncidentModal({
           left: 0,
           right: 0,
           bottom: 0,
-          padding: "16px 20px calc(20px + env(safe-area-inset-bottom)) 20px",
+          padding: `${px(14)}px ${px(18)}px calc(${px(18)}px + env(safe-area-inset-bottom)) ${px(18)}px`,
           background: "linear-gradient(180deg, rgba(248,249,250,0) 0%, #f8f9fa 30%)",
           boxSizing: "border-box",
         }}
@@ -549,13 +555,13 @@ export default function IncidentModal({
             onClick={() => console.log("Enviar incidencia")}
             style={{
               width: "100%",
-              height: 48, // ✅ Reducido de 56 a 48
-              borderRadius: 24, // ✅ Ajustado para mantener proporción
+              height: px(44),
+              borderRadius: px(22),
               border: "none",
               background: "#1e40af",
               color: "white",
-              fontSize: 16,
-              fontWeight: 700,
+              fontSize: px(15),
+              fontWeight: 800,
               letterSpacing: "0.5px",
               cursor: "pointer",
             }}
