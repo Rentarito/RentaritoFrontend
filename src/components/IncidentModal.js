@@ -132,10 +132,10 @@ export default function IncidentModal({
 
           <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
             <input
-              value={machineNo}
-              onChange={(e) => setMachineNo(e.target.value)}
-              placeholder="Escribe o Escanea el código"
-              style={{
+                value={machineNo}
+                onChange={(e) => setMachineNo(e.target.value)}
+                placeholder="Escribe o Escanea el código"
+                style={{
                 flex: 1,
                 height: 48,
                 borderRadius: 12,
@@ -146,37 +146,39 @@ export default function IncidentModal({
                 background: "#fff",
                 boxSizing: "border-box",
                 color: "#1a1a1a",
-              }}
+                // ✅ evita que algunos móviles “muevan” el texto verticalmente
+                lineHeight: "48px",
+                }}
             />
 
             <button
-              type="button"
-              onClick={() => console.log("Escanear")}
-              style={{
+                type="button"
+                onClick={() => console.log("Escanear")}
+                style={{
                 width: "min(160px, 42vw)",
                 height: 48,
                 borderRadius: 12,
                 border: "none",
-                background: "#0198f1",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                background: "#3b82f6",
                 cursor: "pointer",
                 flexShrink: 0,
 
-                // ✅ CLAVE para alinear perfecto con el input (evita estilos por defecto del botón)
+                // ✅ alineación perfecta
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 padding: 0,
                 margin: 0,
                 lineHeight: 0,
                 boxSizing: "border-box",
                 appearance: "none",
                 WebkitAppearance: "none",
-              }}
-              title="Escanear"
+                }}
+                title="Escanear"
             >
-              <ScanIcon />
+                <ScanIcon />
             </button>
-          </div>
+            </div>
         </div>
 
         {/* Grupo de Máquinas */}
