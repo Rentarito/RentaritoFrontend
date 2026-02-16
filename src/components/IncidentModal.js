@@ -80,13 +80,13 @@ export default function IncidentModal({
     >
       <div
         style={{
-          padding: "24px 20px 180px 20px",
+          padding: "32px 20px 180px 20px", // ✅ Más padding-top para que se vea el título
           maxWidth: 760,
           margin: "0 auto",
           boxSizing: "border-box",
         }}
       >
-        {/* Título AVERÍA - sin barra sticky */}
+        {/* Título AVERÍA - SIN fondo blanco */}
         <h1
           style={{
             fontSize: 28,
@@ -94,6 +94,7 @@ export default function IncidentModal({
             letterSpacing: "0.5px",
             margin: "0 0 32px 0",
             color: "#1a1a1a",
+            // ✅ Sin background
           }}
         >
           AVERÍA
@@ -120,7 +121,7 @@ export default function IncidentModal({
               placeholder="Escribe o Escanea el código"
               style={{
                 flex: 1,
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
                 padding: "0 16px",
@@ -137,7 +138,7 @@ export default function IncidentModal({
               onClick={() => console.log("Escanear")}
               style={{
                 width: 160,
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "none",
                 background: "#3b82f6",
@@ -177,7 +178,7 @@ export default function IncidentModal({
               }}
               style={{
                 flex: 1,
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
                 padding: "0 14px",
@@ -203,7 +204,7 @@ export default function IncidentModal({
               placeholder="Grupo de Máquina"
               style={{
                 flex: 1,
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
                 padding: "0 16px",
@@ -221,7 +222,7 @@ export default function IncidentModal({
         <div style={{ marginBottom: 24 }}>
           <div
             style={{
-              minHeight: 56,
+              minHeight: 48, // ✅ Reducido de 56 a 48
               borderRadius: 12,
               border: "1px solid #d1d5db",
               background: "#fff",
@@ -236,7 +237,7 @@ export default function IncidentModal({
               style={{
                 border: "1px solid #6b7280",
                 borderRadius: 6,
-                padding: "10px 16px",
+                padding: "8px 14px", // ✅ Ajustado padding
                 cursor: "pointer",
                 background: "#f3f4f6",
                 fontWeight: 600,
@@ -274,8 +275,8 @@ export default function IncidentModal({
           style={{
             marginBottom: 40,
             width: "100%",
-            height: 56,
-            borderRadius: 28,
+            height: 48, // ✅ Reducido de 56 a 48
+            borderRadius: 24, // ✅ Ajustado para mantener proporción
             border: "none",
             background: "#3b82f6",
             color: "white",
@@ -288,7 +289,7 @@ export default function IncidentModal({
           AÑADIR MÁQUINA
         </button>
 
-        {/* INFORMACIÓN DE CONTACTO */}
+        {/* INFORMACIÓN DE CONTACTO - SIN fondo blanco */}
         <div>
           <h2
             style={{
@@ -297,6 +298,7 @@ export default function IncidentModal({
               letterSpacing: "0.5px",
               marginBottom: 28,
               color: "#1a1a1a",
+              // ✅ Sin background
             }}
           >
             INFORMACIÓN DE CONTACTO
@@ -321,7 +323,7 @@ export default function IncidentModal({
               placeholder="Nombre"
               style={{
                 width: "100%",
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
                 padding: "0 16px",
@@ -353,7 +355,7 @@ export default function IncidentModal({
               placeholder="974444444"
               style={{
                 width: "100%",
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
                 padding: "0 16px",
@@ -385,7 +387,7 @@ export default function IncidentModal({
               placeholder="Email"
               style={{
                 width: "100%",
-                height: 56,
+                height: 48, // ✅ Reducido de 56 a 48
                 borderRadius: 12,
                 border: "1px solid #d1d5db",
                 padding: "0 16px",
@@ -428,7 +430,7 @@ export default function IncidentModal({
                 disabled
                 style={{
                   width: "100%",
-                  height: 56,
+                  height: 48, // ✅ Reducido de 56 a 48
                   borderRadius: 12,
                   border: "1px solid #d1d5db",
                   padding: "0 16px",
@@ -456,7 +458,7 @@ export default function IncidentModal({
                 disabled
                 style={{
                   width: "100%",
-                  height: 56,
+                  height: 48, // ✅ Reducido de 56 a 48
                   borderRadius: 12,
                   border: "1px solid #d1d5db",
                   padding: "0 16px",
@@ -547,8 +549,8 @@ export default function IncidentModal({
             onClick={() => console.log("Enviar incidencia")}
             style={{
               width: "100%",
-              height: 56,
-              borderRadius: 28,
+              height: 48, // ✅ Reducido de 56 a 48
+              borderRadius: 24, // ✅ Ajustado para mantener proporción
               border: "none",
               background: "#1e40af",
               color: "white",
