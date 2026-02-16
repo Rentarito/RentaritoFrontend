@@ -13,42 +13,13 @@ function formatTime(d) {
 }
 
 function ScanIcon() {
-  // Icono simple tipo “escáner”
   return (
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M7 3H5a2 2 0 0 0-2 2v2"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M17 3h2a2 2 0 0 1 2 2v2"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7 21H5a2 2 0 0 1-2-2v-2"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M17 21h2a2 2 0 0 0 2-2v-2"
-        stroke="white"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <rect
-        x="7.5"
-        y="7.5"
-        width="9"
-        height="9"
-        rx="1.5"
-        stroke="white"
-        strokeWidth="2"
-      />
+      <path d="M7 3H5a2 2 0 0 0-2 2v2" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M17 3h2a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M7 21H5a2 2 0 0 1-2-2v-2" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <path d="M17 21h2a2 2 0 0 0 2-2v-2" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <rect x="7.5" y="7.5" width="9" height="9" rx="1.5" stroke="white" strokeWidth="2" />
     </svg>
   );
 }
@@ -59,7 +30,7 @@ export default function IncidentModal({
   initialMachineNo = "",
   initialMachineGroup = "",
 }) {
-  const now = useMemo(() => new Date(), [open]); // recalcula cuando abre
+  const now = useMemo(() => new Date(), [open]);
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
   const [machineGroupSelect, setMachineGroupSelect] = useState("");
   const [machineGroupText, setMachineGroupText] = useState(initialMachineGroup || "");
@@ -74,17 +45,14 @@ export default function IncidentModal({
   useEffect(() => {
     if (!open) return;
 
-    // Bloquea scroll del fondo
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // ESC para cerrar
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
     };
     window.addEventListener("keydown", onKey);
 
-    // Reinicio (solo visual) al abrir
     setMachineNo(initialMachineNo || "");
     setMachineGroupText(initialMachineGroup || "");
     setMachineGroupSelect("");
@@ -98,6 +66,12 @@ export default function IncidentModal({
 
   if (!open) return null;
 
+  // paddings/gaps responsive MUY SUAVES (sin cambiar el diseño base)
+  const SIDE_PAD = "min(16px, 4vw)";
+  const GAP = "min(14px, 3.5vw)";
+  const SCAN_W = "min(170px, 42vw)"; // en pantallas normales sigue siendo 170px
+  const CONTENT_BOTTOM_PAD = "150px"; // un poco más que 120 para móviles bajos
+
   return (
     <div
       style={{
@@ -106,19 +80,24 @@ export default function IncidentModal({
         zIndex: 9999,
         background: "#f6f7f9",
         overflowY: "auto",
+
+        // ✅ CLAVE: evita “font boosting” en móvil (lo que te hacía letras gigantes)
+        WebkitTextSizeAdjust: "100%",
+        textSizeAdjust: "100%",
       }}
     >
-      {/* Top bar simple con cerrar */}
+      {/* Top bar */}
       <div
         style={{
           position: "sticky",
           top: 0,
           background: "#f6f7f9",
-          padding: "14px 16px 10px 16px",
+          padding: `14px ${SIDE_PAD} 10px ${SIDE_PAD}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           borderBottom: "1px solid rgba(0,0,0,0.04)",
+          boxSizing: "border-box",
         }}
       >
         <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: 0.5 }}>
@@ -143,14 +122,21 @@ export default function IncidentModal({
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: "18px 16px 120px 16px", maxWidth: 520, margin: "0 auto" }}>
+      <div
+        style={{
+          padding: `18px ${SIDE_PAD} ${CONTENT_BOTTOM_PAD} ${SIDE_PAD}`,
+          maxWidth: 520,
+          margin: "0 auto",
+          boxSizing: "border-box",
+        }}
+      >
         {/* Código máquina */}
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 26, fontWeight: 500, marginBottom: 12 }}>
             Código de máquina
           </div>
 
-          <div style={{ display: "flex", gap: 14, alignItems: "stretch" }}>
+          <div style={{ display: "flex", gap: GAP, alignItems: "stretch" }}>
             <input
               value={machineNo}
               onChange={(e) => setMachineNo(e.target.value)}
@@ -164,15 +150,15 @@ export default function IncidentModal({
                 fontSize: 18,
                 outline: "none",
                 background: "#fff",
+                boxSizing: "border-box",
               }}
             />
 
             <button
               type="button"
-              // sin funcionalidad aún
               onClick={() => console.log("Escanear (pendiente)")}
               style={{
-                width: 170,
+                width: SCAN_W, // ✅ responsive suave
                 height: 58,
                 borderRadius: 14,
                 border: "none",
@@ -181,6 +167,7 @@ export default function IncidentModal({
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
               title="Escanear"
             >
@@ -195,12 +182,11 @@ export default function IncidentModal({
             Grupo de Máquinas
           </div>
 
-          <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ display: "flex", gap: GAP }}>
             <select
               value={machineGroupSelect}
               onChange={(e) => {
                 setMachineGroupSelect(e.target.value);
-                // solo para que se vea como la captura: reflejamos en el campo de la derecha
                 if (e.target.value) setMachineGroupText(e.target.value);
               }}
               style={{
@@ -213,12 +199,12 @@ export default function IncidentModal({
                 outline: "none",
                 background: "#fff",
                 color: machineGroupSelect ? "#111" : "#6b7280",
+                boxSizing: "border-box",
               }}
             >
               <option value="" disabled>
                 Selecciona el Grupo de
               </option>
-              {/* Opciones “mock” para el diseño (luego las llenamos de verdad) */}
               <option value="DUMPER">DUMPER</option>
               <option value="EXCAVADORA">EXCAVADORA</option>
               <option value="CARRETILLA">CARRETILLA</option>
@@ -238,6 +224,7 @@ export default function IncidentModal({
                 fontSize: 18,
                 outline: "none",
                 background: "#fff",
+                boxSizing: "border-box",
               }}
             />
           </div>
@@ -255,6 +242,7 @@ export default function IncidentModal({
               alignItems: "center",
               padding: "0 14px",
               gap: 12,
+              boxSizing: "border-box",
             }}
           >
             <label
@@ -265,6 +253,11 @@ export default function IncidentModal({
                 cursor: "pointer",
                 background: "#efefef",
                 fontWeight: 600,
+
+                // ✅ evita que se parta en 2 líneas en móviles
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+                fontSize: 18, // ✅ para que no lo “boostee” el móvil
               }}
             >
               Elegir archivos
@@ -274,7 +267,9 @@ export default function IncidentModal({
                 style={{ display: "none" }}
                 onChange={(e) => {
                   const count = e.target.files?.length || 0;
-                  setFilesLabel(count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado");
+                  setFilesLabel(
+                    count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado"
+                  );
                 }}
               />
             </label>
@@ -335,6 +330,7 @@ export default function IncidentModal({
                 fontSize: 18,
                 outline: "none",
                 background: "#fff",
+                boxSizing: "border-box",
               }}
             />
           </div>
@@ -357,6 +353,7 @@ export default function IncidentModal({
                 fontSize: 18,
                 outline: "none",
                 background: "#fff",
+                boxSizing: "border-box",
               }}
             />
           </div>
@@ -379,6 +376,7 @@ export default function IncidentModal({
                 fontSize: 18,
                 outline: "none",
                 background: "#fff",
+                boxSizing: "border-box",
               }}
             />
           </div>
@@ -388,7 +386,7 @@ export default function IncidentModal({
             Fecha y Hora de la solicitud (esto se realiza automaticamente)
           </div>
 
-          <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+          <div style={{ display: "flex", gap: GAP, marginTop: 10 }}>
             <div style={{ flex: 1 }}>
               <div style={{ color: "#9aa0a6", fontSize: 24, marginBottom: 8 }}>Fecha</div>
               <input
@@ -403,6 +401,7 @@ export default function IncidentModal({
                   fontSize: 18,
                   background: "#f1f1f1",
                   color: "#333",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
@@ -421,6 +420,7 @@ export default function IncidentModal({
                   fontSize: 18,
                   background: "#f1f1f1",
                   color: "#333",
+                  boxSizing: "border-box",
                 }}
               />
             </div>
@@ -444,6 +444,7 @@ export default function IncidentModal({
                 outline: "none",
                 background: "#fff",
                 resize: "none",
+                boxSizing: "border-box",
               }}
             />
           </div>
@@ -477,8 +478,13 @@ export default function IncidentModal({
           left: 0,
           right: 0,
           bottom: 0,
-          padding: "12px 16px 18px 16px",
-          background: "linear-gradient(180deg, rgba(246,247,249,0) 0%, #f6f7f9 35%, #f6f7f9 100%)",
+
+          // ✅ safe area iPhone (no afecta Android)
+          padding: `12px ${SIDE_PAD} calc(18px + env(safe-area-inset-bottom)) ${SIDE_PAD}`,
+
+          background:
+            "linear-gradient(180deg, rgba(246,247,249,0) 0%, #f6f7f9 35%, #f6f7f9 100%)",
+          boxSizing: "border-box",
         }}
       >
         <div style={{ maxWidth: 520, margin: "0 auto" }}>
@@ -496,7 +502,7 @@ export default function IncidentModal({
               fontWeight: 900,
               letterSpacing: 0.6,
               cursor: "pointer",
-              opacity: 0.85, // como en la captura (parece algo “apagado”)
+              opacity: 0.85,
             }}
           >
             ENVIAR
