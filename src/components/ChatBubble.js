@@ -1,12 +1,15 @@
 import React from "react";
 
-export default function ChatBubble({ message, isUser, showCreateIncident = false, onCreateIncident }) {
-  // Renderiza el contenido, envolviendo "RentAIrito" solo en mensajes del bot
+export default function ChatBubble({
+  message,
+  isUser,
+  showCreateIncident = false,
+  onCreateIncident,
+}) {
   const renderMessage = () => {
-    if (typeof message !== "string") return message; // por si algún día pasas JSX
-    if (isUser) return message; // no tocamos mensajes del usuario
+    if (typeof message !== "string") return message;
+    if (isUser) return message;
 
-    // Divide y envuelve cada ocurrencia exacta de "RentAIrito"
     return message.split(/(RentAIrito)/g).map((part, i) =>
       part === "RentAIrito" ? (
         <span key={i} className="cambria-text">
@@ -53,11 +56,10 @@ export default function ChatBubble({ message, isUser, showCreateIncident = false
         </div>
       </div>
 
-      {/* ✅ Botón solo en mensajes del bot marcados como “sin solución” */}
       {!isUser && showCreateIncident && (
         <button
           type="button"
-          onClick={onCreateIncident || (() => console.log("Crear incidencia (pendiente)"))}
+          onClick={onCreateIncident || (() => console.log("Crear avería (pendiente)"))}
           style={{
             marginTop: 8,
             borderRadius: 12,
@@ -70,7 +72,7 @@ export default function ChatBubble({ message, isUser, showCreateIncident = false
             maxWidth: 320,
           }}
         >
-          Crear incidencia
+          Crear avería
         </button>
       )}
     </div>

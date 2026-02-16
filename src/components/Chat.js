@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import ChatBubble from "./ChatBubble";
+import IncidentModal from "./IncidentModal";
 import getSessionId from "../helpers/sessionIdHelper";
 import { fetchManualAnswer, fetchMachineHvo, fetchMachineHvoByFleet } from "../helpers/api";
 
-// ✅ Detecta respuestas del bot "sin solución"
+// Detecta respuestas del bot "sin solución"
 const NO_SOLUTION_REGEX =
   /(no (tengo|dispongo).*informaci[oó]n)|(no he encontrado.*(soluci[oó]n|respuesta))|(no (encuentro|puedo encontrar))|(no.*en el manual)|(no.*puedo ayudarte.*con (eso|esa))/i;
 
@@ -25,18 +26,15 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     return s.includes("hvo") || s.includes("aceite hvo");
   };
 
-  // ✅ Ahora solo aceptamos número (nosotros ya interpretamos terminación por defecto en backend)
   const extractFleetNumber = (q) => {
     const s = (q || "").trim();
     const m = s.match(/\d+/);
     return m ? m[0] : null;
   };
 
-  // ✅ Cambiamos chat para que cada mensaje pueda llevar "showCreateIncident"
   const [chat, setChat] = useState([
     { role: "assistant", content: introText, showCreateIncident: false },
   ]);
-
   const [input, setInput] = useState("");
   const [probId, setProbId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -46,14 +44,14 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
   const scrollRef = useRef();
   const sessionId = getSessionId();
 
-  // Cache: key -> respuesta backend
   const hvoCacheRef = useRef({});
-
-  // Estado para lista: esperando número de flota
   const waitingFleetRef = useRef(false);
 
-  // Offset header
   const [headerOffset, setHeaderOffset] = useState(24);
+
+  // ✅ Modal (solo diseño)
+  const [incidentOpen, setIncidentOpen] = useState(false);
+  const [incidentBotText, setIncidentBotText] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -96,15 +94,9 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [onBack]);
 
-  // ✅ placeholder de momento (luego le damos funcionalidad)
-  const handleCreateIncident = (botMessageText) => {
-    console.log("Crear incidencia (pendiente)", {
-      machineFolder,
-      machineNo,
-      botMessageText,
-      sessionId,
-      probId,
-    });
+  const openIncidentModal = (botText) => {
+    setIncidentBotText(botText || "");
+    setIncidentOpen(true);
   };
 
   const sendMessage = async () => {
@@ -121,9 +113,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     setImageUrl(null);
 
     try {
-      // -------------------------------------------------------
-      // 1) Si estamos esperando flota (modo lista)
-      // -------------------------------------------------------
+      // 1) esperando flota
       if (waitingFleetRef.current) {
         const fleetNumber = extractFleetNumber(query);
 
@@ -140,12 +130,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         let data = hvoCacheRef.current[key];
 
         if (!data) {
-          // ✅ backend ya hace exacto y si no, terminación
           data = await fetchMachineHvoByFleet(machineFolder, fleetNumber);
           hvoCacheRef.current[key] = data;
         }
 
-        // ❌ No existe
         if (!data.exists) {
           waitingFleetRef.current = true;
           setChat((old) => [
@@ -161,7 +149,6 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
           return;
         }
 
-        // ⚠️ Múltiples coincidencias (cuando la terminación coincide con varias)
         if (data.multiple) {
           waitingFleetRef.current = true;
           setChat((old) => [
@@ -179,7 +166,6 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
           return;
         }
 
-        // ✅ Existe y es única: internal define si puede
         waitingFleetRef.current = false;
         const allowed = !!data.internal;
 
@@ -196,11 +182,8 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         return;
       }
 
-      // -------------------------------------------------------
-      // 2) Si el usuario pregunta por HVO
-      // -------------------------------------------------------
+      // 2) HVO
       if (isHvoQuestion(query)) {
-        // 2A) Entró por QR: machineNo
         if (machineNo) {
           const key = `no:${machineNo}`;
           let data = hvoCacheRef.current[key];
@@ -214,29 +197,19 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
           setChat((old) => [
             ...old,
-            {
-              role: "assistant",
-              content: makeHvoMsgText(allowed, machineNo),
-              showCreateIncident: false,
-            },
+            { role: "assistant", content: makeHvoMsgText(allowed, machineNo), showCreateIncident: false },
           ]);
           setLoading(false);
           return;
         }
 
-        // 2B) Entró por lista: pedir flota
         waitingFleetRef.current = true;
-        setChat((old) => [
-          ...old,
-          { role: "assistant", content: fleetAskText, showCreateIncident: false },
-        ]);
+        setChat((old) => [...old, { role: "assistant", content: fleetAskText, showCreateIncident: false }]);
         setLoading(false);
         return;
       }
 
-      // -------------------------------------------------------
-      // 3) Flujo normal del chatbot
-      // -------------------------------------------------------
+      // 3) normal
       const history = [...chat, { role: "user", content: query }].map((msg) => ({
         role: msg.role,
         content: msg.content,
@@ -250,7 +223,6 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         sessionId,
       });
 
-      // ✅ Aquí marcamos si el bot no encontró solución
       const botText = res.answer;
 
       setChat((old) => [
@@ -290,6 +262,15 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         backgroundSize: "cover",
       }}
     >
+      {/* ✅ Modal (solo diseño) */}
+      <IncidentModal
+        open={incidentOpen}
+        onClose={() => setIncidentOpen(false)}
+        initialMachineNo={machineNo || ""}
+        initialMachineGroup={machineFolder || ""}
+        // (incidentBotText lo guardamos para el futuro; ahora no lo usamos)
+      />
+
       <div style={{ height: headerOffset, flexShrink: 0 }} />
 
       <div className="header-selection" style={{ display: "flex", alignItems: "center" }}>
@@ -324,7 +305,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
               message={msg.content}
               isUser={msg.role === "user"}
               showCreateIncident={!!msg.showCreateIncident}
-              onCreateIncident={() => handleCreateIncident(msg.content)}
+              onCreateIncident={() => openIncidentModal(msg.content)}
             />
           ))}
 
