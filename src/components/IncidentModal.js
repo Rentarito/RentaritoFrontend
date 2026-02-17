@@ -437,7 +437,7 @@ export default function IncidentModal({
                 padding: "0 16px",
                 fontSize: 15,
                 background: "#f3f4f6",
-                color: "#0198f1",
+                color: "#6b7280",
                 boxSizing: "border-box",
               }}
             />
