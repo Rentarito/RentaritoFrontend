@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import machineCache from "../helpers/machineCache";
+import { fetchMachines } from "../helpers/api";
+import "../App.css";
 import { Html5Qrcode } from "html5-qrcode";
 
 function pad2(n) {
@@ -33,8 +36,12 @@ export default function IncidentModal({
 }) {
   const now = useMemo(() => new Date(), [open]);
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
-  const [machineGroupSelect, setMachineGroupSelect] = useState("");
-  const [machineGroupText, setMachineGroupText] = useState(initialMachineGroup || "");
+
+  // ✅ IZQUIERDA (grupo): ahora funciona como el desplegable/autocomplete de MachineSelection
+  const [machineGroupSelect, setMachineGroupSelect] = useState(initialMachineGroup || "");
+  // ✅ DERECHA (número): se queda como input libre para que el usuario escriba el número de la máquina
+  const [machineGroupText, setMachineGroupText] = useState("");
+
   const [filesLabel, setFilesLabel] = useState("Ningún archivo seleccionado");
 
   const [name, setName] = useState("");
@@ -57,7 +64,7 @@ export default function IncidentModal({
       return;
     }
     setQrError(null);
-    setMachineNo(codigo); // ✅ lo ponemos en el campo izquierdo
+    setMachineNo(codigo); // ✅ lo ponemos en el campo izquierdo "Código de máquina"
   }
 
   // MISMA idea que MachineSelection: la app nativa llamará a window.setQrFromNative('<texto QR>')
@@ -90,7 +97,7 @@ export default function IncidentModal({
     };
   }, [open]);
 
-  // ---- QR modal logic (copiado en comportamiento del de MachineSelection) ----
+  // ---- QR modal logic (mismo comportamiento del de MachineSelection) ----
   useEffect(() => {
     const regionId = "incident-qr-modal-reader";
 
@@ -110,7 +117,6 @@ export default function IncidentModal({
 
       Html5Qrcode.getCameras()
         .then((devices) => {
-          // Comprobamos que haya al menos una cámara
           if (!devices || devices.length === 0) {
             setQrError("No se detectó ninguna cámara.");
             setShowQRModal(false);
@@ -128,7 +134,6 @@ export default function IncidentModal({
                 },
               },
               (decodedText) => {
-                // Cerramos el modal y el escáner SÍ o SÍ
                 setShowQRModal(false);
                 html5QrCode
                   .stop()
@@ -136,14 +141,11 @@ export default function IncidentModal({
                   .catch(() => {});
                 qrCodeScannerRef.current = null;
 
-                // ✅ Reutilizamos la función común
                 handleMachineFromQr(decodedText);
               },
-              (errorMessage) => {
-                // puedes loggear si quieres
-              }
+              () => {}
             )
-            .catch((err) => {
+            .catch(() => {
               setQrError("No se pudo iniciar el escáner.");
               setShowQRModal(false);
               html5QrCode.clear().catch(() => {});
@@ -155,7 +157,6 @@ export default function IncidentModal({
         });
     }, 300);
 
-    // Limpieza extra si el componente se desmonta
     return () => {
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
@@ -165,6 +166,49 @@ export default function IncidentModal({
     };
   }, [showQRModal]);
   // =============================================================
+
+  // ====== ✅ DESPLEGABLE/Autocomplete de GRUPO (igual que MachineSelection) ======
+  const [machines, setMachines] = useState([]);
+  const [showGroupDropdown, setShowGroupDropdown] = useState(false);
+  const [filteredGroups, setFilteredGroups] = useState([]);
+  const [groupError, setGroupError] = useState(null);
+  const groupInputRef = useRef(null);
+
+  useEffect(() => {
+    async function loadMachines() {
+      try {
+        let ms = machineCache.machines;
+        if (!ms) {
+          ms = await fetchMachines();
+          machineCache.machines = ms;
+        }
+        setMachines(ms);
+        setFilteredGroups(ms);
+        setGroupError(null);
+      } catch (e) {
+        setGroupError("Error cargando máquinas. Reintenta más tarde.");
+      }
+    }
+
+    if (open) loadMachines();
+  }, [open]);
+
+  useEffect(() => {
+    const val = (machineGroupSelect || "").trim();
+    if (!val) {
+      setFilteredGroups(machines);
+    } else {
+      setFilteredGroups(
+        machines.filter((m) => m.toLowerCase().includes(val.toLowerCase()))
+      );
+    }
+  }, [machineGroupSelect, machines]);
+
+  const handleSelectGroup = (group) => {
+    setMachineGroupSelect(group);
+    setShowGroupDropdown(false);
+  };
+  // ========================================================================
 
   useEffect(() => {
     if (!open) return;
@@ -178,18 +222,23 @@ export default function IncidentModal({
     window.addEventListener("keydown", onKey);
 
     setMachineNo(initialMachineNo || "");
-    setMachineGroupText(initialMachineGroup || "");
-    setMachineGroupSelect("");
+    // ✅ ahora el grupo se queda en el campo izquierdo (autocomplete)
+    setMachineGroupSelect(initialMachineGroup || "");
+    // ✅ el campo derecho queda libre para que el usuario escriba el número
+    setMachineGroupText("");
     setFilesLabel("Ningún archivo seleccionado");
 
     setQrError(null);
     setShowQRModal(false);
 
+    setShowGroupDropdown(false);
+    setGroupError(null);
+
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
 
-      // ✅ Asegurar que el scanner se para al cerrar el modal principal
+      // parar escáner QR si estuviera activo
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -262,7 +311,6 @@ export default function IncidentModal({
             Código de máquina
           </label>
 
-          {/* ✅ CAMBIO: grid + wrappers para alinear perfecto input/botón */}
           <div
             style={{
               display: "grid",
@@ -299,14 +347,12 @@ export default function IncidentModal({
               <button
                 type="button"
                 onClick={() => {
-                  // 1️⃣ Si la app nativa ha expuesto su función, usamos SIEMPRE el escáner nativo
                   if (
                     typeof window !== "undefined" &&
                     typeof window.openNativeQrScanner === "function"
                   ) {
                     window.openNativeQrScanner();
                   } else {
-                    // 2️⃣ Si estamos en un navegador normal, usamos el escáner HTML5
                     setShowQRModal(true);
                   }
                 }}
@@ -317,7 +363,6 @@ export default function IncidentModal({
                   border: "none",
                   background: "#0198f1",
                   cursor: "pointer",
-
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -335,7 +380,6 @@ export default function IncidentModal({
             </div>
           </div>
 
-          {/* Mostrar error del QR si hay (igual idea que selección) */}
           {qrError && <div style={{ color: "red", marginTop: 16 }}>{qrError}</div>}
         </div>
 
@@ -353,39 +397,87 @@ export default function IncidentModal({
             Grupo de máquinas
           </label>
 
+          {/* ✅ IZQUIERDA: dropdown/autocomplete igual que MachineSelection */}
+          {/* ✅ DERECHA: input libre para número */}
           <div style={{ display: "flex", gap: 12 }}>
-            <select
-              value={machineGroupSelect}
-              onChange={(e) => {
-                setMachineGroupSelect(e.target.value);
-                if (e.target.value) setMachineGroupText(e.target.value);
-              }}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "0 14px",
-                fontSize: 15,
-                outline: "none",
-                background: "#fff",
-                color: machineGroupSelect ? "#1a1a1a" : "#0198f1",
-                boxSizing: "border-box",
-              }}
-            >
-              <option value="" disabled>
-                Selecciona el Grupo de la máquina
-              </option>
-              <option value="DUMPER">DUMPER</option>
-              <option value="EXCAVADORA">EXCAVADORA</option>
-              <option value="CARRETILLA">CARRETILLA</option>
-              <option value="COMPRESOR">COMPRESOR</option>
-            </select>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="autocomplete-container" style={{ width: "100%" }}>
+                <input
+                  type="text"
+                  className="autocomplete-input"
+                  placeholder="Selecciona el Grupo de la máquina"
+                  value={machineGroupSelect}
+                  ref={groupInputRef}
+                  onFocus={() => setShowGroupDropdown(true)}
+                  onChange={(e) => {
+                    setMachineGroupSelect(e.target.value.toUpperCase());
+                    setShowGroupDropdown(true);
+                  }}
+                  onBlur={() => {
+                    // Cerramos con un pequeño delay para permitir click en opciones (igual patrón)
+                    setTimeout(() => setShowGroupDropdown(false), 120);
+                  }}
+                  style={{ minWidth: 0 }}
+                />
 
+                <button
+                  className="icon-button"
+                  style={{
+                    marginLeft: 4,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setShowGroupDropdown((s) => !s);
+                    // mantener foco en el input si se puede
+                    setTimeout(() => groupInputRef.current?.focus?.(), 0);
+                  }}
+                  tabIndex={-1}
+                  aria-label="Abrir selector"
+                >
+                  <img
+                    src={
+                      showGroupDropdown
+                        ? "/assets/ic_arrow_drop_down.svg"
+                        : "/assets/ic_arrow_right.svg"
+                    }
+                    style={{ width: 28, height: 28 }}
+                    alt="Desplegar"
+                  />
+                </button>
+
+                {showGroupDropdown && (
+                  <div className="dropdown" style={{ zIndex: 99999 }}>
+                    {filteredGroups.length === 0 && (
+                      <div className="dropdown-item disabled">No hay resultados</div>
+                    )}
+                    {filteredGroups.map((group, idx) => (
+                      <div
+                        className="dropdown-item"
+                        key={group + idx}
+                        onMouseDown={() => handleSelectGroup(group)}
+                      >
+                        {group}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {groupError && (
+                <div style={{ color: "red", marginTop: 10, fontSize: 13 }}>
+                  {groupError}
+                </div>
+              )}
+            </div>
+
+            {/* ✅ Campo derecho: número de la máquina (se queda libre) */}
             <input
               value={machineGroupText}
               onChange={(e) => setMachineGroupText(e.target.value)}
-              placeholder="Grupo de máquina"
+              placeholder="Número de máquina"
               style={{
                 flex: 1,
                 height: 48,
@@ -722,7 +814,6 @@ export default function IncidentModal({
             <div style={{ textAlign: "right" }}>
               <button
                 onClick={async () => {
-                  // PARAR y limpiar el scanner al cerrar el modal de forma segura
                   if (qrCodeScannerRef.current) {
                     try {
                       await qrCodeScannerRef.current.stop();
@@ -747,6 +838,7 @@ export default function IncidentModal({
                 ×
               </button>
             </div>
+
             <div
               id="incident-qr-modal-reader"
               style={{
