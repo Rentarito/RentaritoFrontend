@@ -221,7 +221,7 @@ export default function IncidentModal({
                 fontSize: 15,
                 outline: "none",
                 background: "#fff",
-                color: machineGroupSelect ? "#1a1a1a" : "#9ca3af",
+                color: machineGroupSelect ? "#1a1a1a" : "#0198f1",
                 boxSizing: "border-box",
               }}
             >
@@ -419,7 +419,7 @@ export default function IncidentModal({
         </div>
 
         {/* Fecha y Hora */}
-        <div style={{ marginTop: 14, marginBottom: 10, color: "#6b7280", fontStyle: "italic", fontSize: 13 }}>
+        <div style={{ marginTop: 14, marginBottom: 10, color: "#0198f1", fontStyle: "italic", fontSize: 13 }}>
           Fecha y Hora de la solicitud (esto se realiza automaticamente)
         </div>
 
@@ -437,7 +437,7 @@ export default function IncidentModal({
                 padding: "0 16px",
                 fontSize: 15,
                 background: "#f3f4f6",
-                color: "#6b7280",
+                color: "#0198f1",
                 boxSizing: "border-box",
               }}
             />
