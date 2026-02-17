@@ -43,105 +43,128 @@ export default function IncidentModal({
   const [comments, setComments] = useState("");
   const [saveInfo, setSaveInfo] = useState(false);
 
-  // ===== QR (MISMA LÓGICA QUE SELECCIÓN: nativo si existe, si no cámara web) =====
-  const [qrOpen, setQrOpen] = useState(false);
-  const [qrError, setQrError] = useState("");
-  const qrInstanceRef = useRef(null);
+  // ====== ✅ QR: MISMO COMPORTAMIENTO QUE MachineSelection ======
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrError, setQrError] = useState(null);
+  const qrCodeScannerRef = useRef(null);
   const prevNativeHandlerRef = useRef(null);
 
-  const handleQrDecoded = async (decodedText) => {
-    const code = (decodedText || "").trim();
-    if (!code) return;
-
-    // ✅ Poner el código leído en el campo de la izquierda
-    setMachineNo(code);
-
-    // Cerrar modal de cámara si estaba abierto
-    setQrOpen(false);
-
-    // Restaurar handler nativo si lo tocamos
-    if (prevNativeHandlerRef.current) {
-      window.setQrFromNative = prevNativeHandlerRef.current;
-      prevNativeHandlerRef.current = null;
+  // Función común al recibir QR (nativo o web)
+  function handleMachineFromQr(decodedText) {
+    const codigo = (decodedText || "").trim();
+    if (!codigo) {
+      setQrError("No se ha leído ningún QR.");
+      return;
     }
-  };
+    setQrError(null);
+    setMachineNo(codigo); // ✅ lo ponemos en el campo izquierdo
+  }
 
-  const onScanQrClick = () => {
-    setQrError("");
+  // MISMA idea que MachineSelection: la app nativa llamará a window.setQrFromNative('<texto QR>')
+  useEffect(() => {
+    if (!open) return;
 
-    // 1) Escáner nativo (app)
-    if (typeof window.openNativeQrScanner === "function") {
-      prevNativeHandlerRef.current = window.setQrFromNative;
+    // guardamos el anterior por si existía (por seguridad)
+    prevNativeHandlerRef.current = window.setQrFromNative;
 
-      window.setQrFromNative = async (decodedText) => {
-        await handleQrDecoded(decodedText);
-      };
-
+    window.setQrFromNative = async (decodedText) => {
       try {
-        window.openNativeQrScanner();
+        if (!decodedText) return;
+        handleMachineFromQr(decodedText);
       } catch (e) {
-        setQrError("No se pudo abrir el escáner nativo.");
+        console.error("Error procesando QR nativo", e);
+        setQrError("Error procesando el QR.");
+      }
+    };
+
+    return () => {
+      // restauramos el handler anterior
+      if (prevNativeHandlerRef.current) {
+        window.setQrFromNative = prevNativeHandlerRef.current;
+        prevNativeHandlerRef.current = null;
+      } else {
+        try {
+          delete window.setQrFromNative;
+        } catch {}
+      }
+    };
+  }, [open]);
+
+  // ---- QR modal logic (copiado en comportamiento del de MachineSelection) ----
+  useEffect(() => {
+    const regionId = "incident-qr-modal-reader";
+
+    if (!showQRModal) {
+      // Si ocultas el modal, limpia el escáner
+      if (qrCodeScannerRef.current) {
+        qrCodeScannerRef.current.stop().catch(() => {});
+        qrCodeScannerRef.current.clear().catch(() => {});
+        qrCodeScannerRef.current = null;
       }
       return;
     }
 
-    // 2) Cámara web (Html5Qrcode)
-    setQrOpen(true);
-  };
+    setTimeout(() => {
+      const html5QrCode = new Html5Qrcode(regionId, { verbose: false });
+      qrCodeScannerRef.current = html5QrCode;
 
-  // Arranque/parada del lector QR web
-  useEffect(() => {
-    if (!qrOpen) return;
+      Html5Qrcode.getCameras()
+        .then((devices) => {
+          // Comprobamos que haya al menos una cámara
+          if (!devices || devices.length === 0) {
+            setQrError("No se detectó ninguna cámara.");
+            setShowQRModal(false);
+            return;
+          }
 
-    const readerId = "incident-qr-reader";
-    let finished = false;
+          html5QrCode
+            .start(
+              { facingMode: "environment" },
+              {
+                fps: 10,
+                qrbox: function (viewfinderWidth, viewfinderHeight) {
+                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                  return { width: minEdge * 0.8, height: minEdge * 0.98 };
+                },
+              },
+              (decodedText) => {
+                // Cerramos el modal y el escáner SÍ o SÍ
+                setShowQRModal(false);
+                html5QrCode
+                  .stop()
+                  .then(() => html5QrCode.clear())
+                  .catch(() => {});
+                qrCodeScannerRef.current = null;
 
-    const start = async () => {
-      try {
-        const html5QrCode = new Html5Qrcode(readerId);
-        qrInstanceRef.current = html5QrCode;
+                // ✅ Reutilizamos la función común
+                handleMachineFromQr(decodedText);
+              },
+              (errorMessage) => {
+                // puedes loggear si quieres
+              }
+            )
+            .catch((err) => {
+              setQrError("No se pudo iniciar el escáner.");
+              setShowQRModal(false);
+              html5QrCode.clear().catch(() => {});
+              qrCodeScannerRef.current = null;
+            });
+        })
+        .catch(() => {
+          setShowQRModal(false);
+        });
+    }, 300);
 
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          async (decodedText) => {
-            if (finished) return;
-            finished = true;
-
-            try {
-              await html5QrCode.stop();
-            } catch {}
-            try {
-              await html5QrCode.clear();
-            } catch {}
-            qrInstanceRef.current = null;
-
-            await handleQrDecoded(decodedText);
-          },
-          () => {} // onScanFailure (ignoramos)
-        );
-      } catch (err) {
-        setQrError("No he podido abrir la cámara. Revisa permisos del navegador.");
+    // Limpieza extra si el componente se desmonta
+    return () => {
+      if (qrCodeScannerRef.current) {
+        qrCodeScannerRef.current.stop().catch(() => {});
+        qrCodeScannerRef.current.clear().catch(() => {});
+        qrCodeScannerRef.current = null;
       }
     };
-
-    start();
-
-    return () => {
-      finished = true;
-      (async () => {
-        if (qrInstanceRef.current) {
-          try {
-            await qrInstanceRef.current.stop();
-          } catch {}
-          try {
-            await qrInstanceRef.current.clear();
-          } catch {}
-          qrInstanceRef.current = null;
-        }
-      })();
-    };
-  }, [qrOpen]);
+  }, [showQRModal]);
+  // =============================================================
 
   useEffect(() => {
     if (!open) return;
@@ -159,31 +182,18 @@ export default function IncidentModal({
     setMachineGroupSelect("");
     setFilesLabel("Ningún archivo seleccionado");
 
-    // reset QR state al abrir
-    setQrOpen(false);
-    setQrError("");
+    setQrError(null);
+    setShowQRModal(false);
 
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
 
-      // parar cámara si estaba abierta
-      (async () => {
-        if (qrInstanceRef.current) {
-          try {
-            await qrInstanceRef.current.stop();
-          } catch {}
-          try {
-            await qrInstanceRef.current.clear();
-          } catch {}
-          qrInstanceRef.current = null;
-        }
-      })();
-
-      // restaurar handler nativo si lo tocamos
-      if (prevNativeHandlerRef.current) {
-        window.setQrFromNative = prevNativeHandlerRef.current;
-        prevNativeHandlerRef.current = null;
+      // ✅ Asegurar que el scanner se para al cerrar el modal principal
+      if (qrCodeScannerRef.current) {
+        qrCodeScannerRef.current.stop().catch(() => {});
+        qrCodeScannerRef.current.clear().catch(() => {});
+        qrCodeScannerRef.current = null;
       }
     };
   }, [open, onClose, initialMachineNo, initialMachineGroup]);
@@ -288,7 +298,18 @@ export default function IncidentModal({
             <div style={{ height: 48 }}>
               <button
                 type="button"
-                onClick={onScanQrClick}
+                onClick={() => {
+                  // 1️⃣ Si la app nativa ha expuesto su función, usamos SIEMPRE el escáner nativo
+                  if (
+                    typeof window !== "undefined" &&
+                    typeof window.openNativeQrScanner === "function"
+                  ) {
+                    window.openNativeQrScanner();
+                  } else {
+                    // 2️⃣ Si estamos en un navegador normal, usamos el escáner HTML5
+                    setShowQRModal(true);
+                  }
+                }}
                 style={{
                   width: "100%",
                   height: "100%",
@@ -314,12 +335,8 @@ export default function IncidentModal({
             </div>
           </div>
 
-          {/* error QR (si falla cámara/nativo) */}
-          {qrError ? (
-            <div style={{ marginTop: 10, color: "#dc2626", fontWeight: 700, fontSize: 13 }}>
-              {qrError}
-            </div>
-          ) : null}
+          {/* Mostrar error del QR si hay (igual idea que selección) */}
+          {qrError && <div style={{ color: "red", marginTop: 16 }}>{qrError}</div>}
         </div>
 
         {/* Grupo de Máquinas */}
@@ -675,63 +692,82 @@ export default function IncidentModal({
         </div>
       </div>
 
-      {/* MODAL CÁMARA (Html5Qrcode) */}
-      {qrOpen && (
+      {/* --- MODAL QR (MISMO ESTILO/COMPORTAMIENTO QUE MachineSelection) --- */}
+      {showQRModal && (
         <div
           style={{
             position: "fixed",
-            inset: 0,
-            zIndex: 10000,
-            background: "rgba(0,0,0,0.75)",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.93)",
+            zIndex: 9999,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: 20,
           }}
-          onMouseDown={() => setQrOpen(false)}
         >
           <div
             style={{
-              width: "min(420px, 100%)",
               background: "#fff",
-              borderRadius: 12,
-              padding: 12,
-              boxSizing: "border-box",
+              borderRadius: 18,
+              padding: 24,
+              position: "relative",
+              boxShadow: "0 6px 36px #111a",
+              maxWidth: 400,
+              width: "94vw",
             }}
-            onMouseDown={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 10,
-              }}
-            >
-              <div style={{ fontWeight: 900 }}>Escanear QR</div>
+            <div style={{ textAlign: "right" }}>
               <button
-                type="button"
-                onClick={() => setQrOpen(false)}
-                style={{
-                  border: "none",
-                  background: "#e5e7eb",
-                  borderRadius: 10,
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                  fontWeight: 800,
+                onClick={async () => {
+                  // PARAR y limpiar el scanner al cerrar el modal de forma segura
+                  if (qrCodeScannerRef.current) {
+                    try {
+                      await qrCodeScannerRef.current.stop();
+                    } catch {}
+                    try {
+                      await qrCodeScannerRef.current.clear();
+                    } catch {}
+                    qrCodeScannerRef.current = null;
+                  }
+                  setShowQRModal(false);
                 }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: 24,
+                  color: "#0198f1",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+                aria-label="Cerrar escáner"
               >
-                Cerrar
+                ×
               </button>
             </div>
-
-            <div id="incident-qr-reader" style={{ width: "100%", minHeight: 280 }} />
-
-            {qrError && (
-              <div style={{ marginTop: 10, color: "#dc2626", fontWeight: 800 }}>
-                {qrError}
-              </div>
-            )}
+            <div
+              id="incident-qr-modal-reader"
+              style={{
+                width: "100%",
+                height: 320,
+                maxWidth: 360,
+                margin: "0 auto",
+                borderRadius: 12,
+                overflow: "hidden",
+              }}
+            />
+            <div
+              style={{
+                color: "#0198f1",
+                marginTop: 12,
+                textAlign: "center",
+                fontWeight: "bold",
+              }}
+            >
+              Apunta con la cámara al QR
+            </div>
           </div>
         </div>
       )}
