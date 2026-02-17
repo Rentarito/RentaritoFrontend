@@ -82,8 +82,6 @@ export default function IncidentModal({
     >
       <div
         style={{
-          // ✅ Baja todo para que el header de tu APP no tape "AVERÍA"
-          // Ajusta 56px -> 64px si tu header es más alto
           paddingTop: "calc(35px + env(safe-area-inset-top))",
           paddingRight: SIDE_PAD,
           paddingLeft: SIDE_PAD,
@@ -93,7 +91,7 @@ export default function IncidentModal({
           boxSizing: "border-box",
         }}
       >
-        {/* ✅ Encabezado AVERÍA como el original: franja blanca (full dentro del contenedor) */}
+        {/* Encabezado AVERÍA */}
         <div
           style={{
             background: "#ffffff",
@@ -105,7 +103,7 @@ export default function IncidentModal({
         >
           <h1
             style={{
-              fontSize: 20, // ✅ más parecido al original
+              fontSize: 20,
               fontWeight: 900,
               letterSpacing: "0.5px",
               margin: 0,
@@ -130,55 +128,67 @@ export default function IncidentModal({
             Código de máquina
           </label>
 
-          <div style={{ display: "flex", gap: 12, alignItems: "stretch" }}>
-            <input
+          {/* ✅ CAMBIO: grid + wrappers para alinear perfecto input/botón */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr min(160px, 42vw)",
+              gap: 12,
+              alignItems: "stretch",
+            }}
+          >
+            <div style={{ height: 48 }}>
+              <input
                 value={machineNo}
                 onChange={(e) => setMachineNo(e.target.value)}
                 placeholder="Escribe o Escanea el código"
                 style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 15,
-                outline: "none",
-                background: "#fff",
-                boxSizing: "border-box",
-                color: "#1a1a1a",
-                // ✅ evita que algunos móviles “muevan” el texto verticalmente
-                lineHeight: "48px",
+                  width: "100%",
+                  height: "100%",
+                  display: "block",
+                  margin: 0,
+                  borderRadius: 12,
+                  border: "1px solid #d1d5db",
+                  padding: "0 16px",
+                  fontSize: 15,
+                  outline: "none",
+                  background: "#fff",
+                  boxSizing: "border-box",
+                  color: "#1a1a1a",
+                  appearance: "none",
+                  WebkitAppearance: "none",
                 }}
-            />
+              />
+            </div>
 
-            <button
+            <div style={{ height: 48 }}>
+              <button
                 type="button"
                 onClick={() => console.log("Escanear")}
                 style={{
-                width: "min(160px, 42vw)",
-                height: 48,
-                borderRadius: 12,
-                border: "none",
-                background: "#3b82f6",
-                cursor: "pointer",
-                flexShrink: 0,
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#0198f1",
+                  cursor: "pointer",
 
-                // ✅ alineación perfecta
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 0,
-                margin: 0,
-                lineHeight: 0,
-                boxSizing: "border-box",
-                appearance: "none",
-                WebkitAppearance: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  margin: 0,
+                  lineHeight: 0,
+                  boxSizing: "border-box",
+                  appearance: "none",
+                  WebkitAppearance: "none",
                 }}
                 title="Escanear"
-            >
+              >
                 <ScanIcon />
-            </button>
+              </button>
             </div>
+          </div>
         </div>
 
         {/* Grupo de Máquinas */}
@@ -280,7 +290,9 @@ export default function IncidentModal({
                 style={{ display: "none" }}
                 onChange={(e) => {
                   const count = e.target.files?.length || 0;
-                  setFilesLabel(count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado");
+                  setFilesLabel(
+                    count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado"
+                  );
                 }}
               />
             </label>
@@ -311,7 +323,7 @@ export default function IncidentModal({
           AÑADIR MÁQUINA
         </button>
 
-        {/* ✅ Encabezado INFORMACIÓN DE CONTACTO como el original: franja blanca */}
+        {/* Encabezado INFORMACIÓN DE CONTACTO */}
         <div
           style={{
             background: "#ffffff",
