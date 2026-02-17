@@ -132,7 +132,7 @@ export default function IncidentModal({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr min(160px, 42vw)",
+              gridTemplateColumns: "1fr 1fr",
               gap: 12,
               alignItems: "stretch",
             }}
@@ -202,7 +202,7 @@ export default function IncidentModal({
               color: "#1a1a1a",
             }}
           >
-            Grupo de Máquinas
+            Grupo de máquinas
           </label>
 
           <div style={{ display: "flex", gap: 12 }}>
@@ -226,7 +226,7 @@ export default function IncidentModal({
               }}
             >
               <option value="" disabled>
-                Selecciona el Grupo de
+                Selecciona el Grupo de la máquina
               </option>
               <option value="DUMPER">DUMPER</option>
               <option value="EXCAVADORA">EXCAVADORA</option>
@@ -237,7 +237,7 @@ export default function IncidentModal({
             <input
               value={machineGroupText}
               onChange={(e) => setMachineGroupText(e.target.value)}
-              placeholder="Grupo de Máquina"
+              placeholder="Grupo de máquina"
               style={{
                 flex: 1,
                 height: 48,
