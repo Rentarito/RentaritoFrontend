@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import machineCache from "../helpers/machineCache";
 import { fetchMachines } from "../helpers/api";
-import "../App.css";
 import { Html5Qrcode } from "html5-qrcode";
 
 function pad2(n) {
@@ -37,9 +36,9 @@ export default function IncidentModal({
   const now = useMemo(() => new Date(), [open]);
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
 
-  // ✅ IZQUIERDA (grupo): ahora funciona como el desplegable/autocomplete de MachineSelection
+  // ✅ SELECT (izquierda): grupo que viene del chat
   const [machineGroupSelect, setMachineGroupSelect] = useState(initialMachineGroup || "");
-  // ✅ DERECHA (número): se queda como input libre para que el usuario escriba el número de la máquina
+  // ✅ INPUT (derecha): libre para que el usuario ponga el número
   const [machineGroupText, setMachineGroupText] = useState("");
 
   const [filesLabel, setFilesLabel] = useState("Ningún archivo seleccionado");
@@ -56,7 +55,6 @@ export default function IncidentModal({
   const qrCodeScannerRef = useRef(null);
   const prevNativeHandlerRef = useRef(null);
 
-  // Función común al recibir QR (nativo o web)
   function handleMachineFromQr(decodedText) {
     const codigo = (decodedText || "").trim();
     if (!codigo) {
@@ -64,14 +62,13 @@ export default function IncidentModal({
       return;
     }
     setQrError(null);
-    setMachineNo(codigo); // ✅ lo ponemos en el campo izquierdo "Código de máquina"
+    setMachineNo(codigo);
   }
 
-  // MISMA idea que MachineSelection: la app nativa llamará a window.setQrFromNative('<texto QR>')
+  // Handler para QR nativo (igual que MachineSelection)
   useEffect(() => {
     if (!open) return;
 
-    // guardamos el anterior por si existía (por seguridad)
     prevNativeHandlerRef.current = window.setQrFromNative;
 
     window.setQrFromNative = async (decodedText) => {
@@ -85,7 +82,6 @@ export default function IncidentModal({
     };
 
     return () => {
-      // restauramos el handler anterior
       if (prevNativeHandlerRef.current) {
         window.setQrFromNative = prevNativeHandlerRef.current;
         prevNativeHandlerRef.current = null;
@@ -97,12 +93,11 @@ export default function IncidentModal({
     };
   }, [open]);
 
-  // ---- QR modal logic (mismo comportamiento del de MachineSelection) ----
+  // Modal QR web (igual que MachineSelection)
   useEffect(() => {
     const regionId = "incident-qr-modal-reader";
 
     if (!showQRModal) {
-      // Si ocultas el modal, limpia el escáner
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -165,14 +160,10 @@ export default function IncidentModal({
       }
     };
   }, [showQRModal]);
-  // =============================================================
 
-  // ====== ✅ DESPLEGABLE/Autocomplete de GRUPO (igual que MachineSelection) ======
+  // ====== ✅ Cargar lista de grupos desde /machines (como MachineSelection) ======
   const [machines, setMachines] = useState([]);
-  const [showGroupDropdown, setShowGroupDropdown] = useState(false);
-  const [filteredGroups, setFilteredGroups] = useState([]);
   const [groupError, setGroupError] = useState(null);
-  const groupInputRef = useRef(null);
 
   useEffect(() => {
     async function loadMachines() {
@@ -183,7 +174,6 @@ export default function IncidentModal({
           machineCache.machines = ms;
         }
         setMachines(ms);
-        setFilteredGroups(ms);
         setGroupError(null);
       } catch (e) {
         setGroupError("Error cargando máquinas. Reintenta más tarde.");
@@ -192,23 +182,6 @@ export default function IncidentModal({
 
     if (open) loadMachines();
   }, [open]);
-
-  useEffect(() => {
-    const val = (machineGroupSelect || "").trim();
-    if (!val) {
-      setFilteredGroups(machines);
-    } else {
-      setFilteredGroups(
-        machines.filter((m) => m.toLowerCase().includes(val.toLowerCase()))
-      );
-    }
-  }, [machineGroupSelect, machines]);
-
-  const handleSelectGroup = (group) => {
-    setMachineGroupSelect(group);
-    setShowGroupDropdown(false);
-  };
-  // ========================================================================
 
   useEffect(() => {
     if (!open) return;
@@ -222,23 +195,22 @@ export default function IncidentModal({
     window.addEventListener("keydown", onKey);
 
     setMachineNo(initialMachineNo || "");
-    // ✅ ahora el grupo se queda en el campo izquierdo (autocomplete)
-    setMachineGroupSelect(initialMachineGroup || "");
-    // ✅ el campo derecho queda libre para que el usuario escriba el número
+
+    // ✅ aquí es donde “escribes” el grupo que viene del chat EN EL SELECT sin cambiar diseño
+    setMachineGroupSelect((initialMachineGroup || "").toUpperCase());
+
+    // ✅ el campo de la derecha se queda libre (número)
     setMachineGroupText("");
+
     setFilesLabel("Ningún archivo seleccionado");
 
     setQrError(null);
     setShowQRModal(false);
 
-    setShowGroupDropdown(false);
-    setGroupError(null);
-
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
 
-      // parar escáner QR si estuviera activo
       if (qrCodeScannerRef.current) {
         qrCodeScannerRef.current.stop().catch(() => {});
         qrCodeScannerRef.current.clear().catch(() => {});
@@ -397,87 +369,46 @@ export default function IncidentModal({
             Grupo de máquinas
           </label>
 
-          {/* ✅ IZQUIERDA: dropdown/autocomplete igual que MachineSelection */}
-          {/* ✅ DERECHA: input libre para número */}
+          {/* ✅ MISMO DISEÑO que tenías: select + input */}
           <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="autocomplete-container" style={{ width: "100%" }}>
-                <input
-                  type="text"
-                  className="autocomplete-input"
-                  placeholder="Selecciona el Grupo de la máquina"
-                  value={machineGroupSelect}
-                  ref={groupInputRef}
-                  onFocus={() => setShowGroupDropdown(true)}
-                  onChange={(e) => {
-                    setMachineGroupSelect(e.target.value.toUpperCase());
-                    setShowGroupDropdown(true);
-                  }}
-                  onBlur={() => {
-                    // Cerramos con un pequeño delay para permitir click en opciones (igual patrón)
-                    setTimeout(() => setShowGroupDropdown(false), 120);
-                  }}
-                  style={{ minWidth: 0 }}
-                />
+            <select
+              value={machineGroupSelect}
+              onChange={(e) => {
+                // ✅ se queda escrito en ESTE MISMO CAMPO
+                setMachineGroupSelect(e.target.value);
 
-                <button
-                  className="icon-button"
-                  style={{
-                    marginLeft: 4,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setShowGroupDropdown((s) => !s);
-                    // mantener foco en el input si se puede
-                    setTimeout(() => groupInputRef.current?.focus?.(), 0);
-                  }}
-                  tabIndex={-1}
-                  aria-label="Abrir selector"
-                >
-                  <img
-                    src={
-                      showGroupDropdown
-                        ? "/assets/ic_arrow_drop_down.svg"
-                        : "/assets/ic_arrow_right.svg"
-                    }
-                    style={{ width: 28, height: 28 }}
-                    alt="Desplegar"
-                  />
-                </button>
+                // ✅ NO tocamos el campo de la derecha (número)
+                // (antes lo estabas copiando; ahora NO)
+              }}
+              style={{
+                flex: 1,
+                height: 48,
+                borderRadius: 12,
+                border: "1px solid #d1d5db",
+                padding: "0 14px",
+                fontSize: 15,
+                outline: "none",
+                background: "#fff",
+                color: machineGroupSelect ? "#1a1a1a" : "#0198f1",
+                boxSizing: "border-box",
+              }}
+            >
+              <option value="" disabled>
+                Selecciona el Grupo de la máquina
+              </option>
 
-                {showGroupDropdown && (
-                  <div className="dropdown" style={{ zIndex: 99999 }}>
-                    {filteredGroups.length === 0 && (
-                      <div className="dropdown-item disabled">No hay resultados</div>
-                    )}
-                    {filteredGroups.map((group, idx) => (
-                      <div
-                        className="dropdown-item"
-                        key={group + idx}
-                        onMouseDown={() => handleSelectGroup(group)}
-                      >
-                        {group}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* ✅ Lista real de máquinas (como MachineSelection) */}
+              {machines.map((m, idx) => (
+                <option key={m + idx} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
 
-              {groupError && (
-                <div style={{ color: "red", marginTop: 10, fontSize: 13 }}>
-                  {groupError}
-                </div>
-              )}
-            </div>
-
-            {/* ✅ Campo derecho: número de la máquina (se queda libre) */}
             <input
               value={machineGroupText}
               onChange={(e) => setMachineGroupText(e.target.value)}
-              placeholder="Número de máquina"
+              placeholder="Grupo de máquina"
               style={{
                 flex: 1,
                 height: 48,
@@ -492,6 +423,8 @@ export default function IncidentModal({
               }}
             />
           </div>
+
+          {groupError && <div style={{ color: "red", marginTop: 16 }}>{groupError}</div>}
         </div>
 
         {/* Subida de archivos */}
