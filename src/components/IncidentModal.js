@@ -3,6 +3,13 @@ import machineCache from "../helpers/machineCache";
 import { fetchMachines } from "../helpers/api";
 import { Html5Qrcode } from "html5-qrcode";
 
+// ✅ URL backend (igual que MachineSelection)
+const BACKEND_BASE_URL =
+  process.env.REACT_APP_BACKEND_URL || "https://rentaritobackend-swcw.onrender.com";
+
+// ✅ Si tu backend protege con API_TOKEN, usa el mismo
+const API_TOKEN = process.env.REACT_APP_API_TOKEN || "rentarito123secure";
+
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -32,15 +39,12 @@ export default function IncidentModal({
   onClose,
   initialMachineNo = "",
   initialMachineGroup = "",
+  chatHistory = [], // ✅ NUEVO: historial del chat para resumir
 }) {
   const now = useMemo(() => new Date(), [open]);
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
-
-  // ✅ SELECT (izquierda): grupo que viene del chat
   const [machineGroupSelect, setMachineGroupSelect] = useState(initialMachineGroup || "");
-  // ✅ INPUT (derecha): libre para que el usuario ponga el número
-  const [machineGroupText, setMachineGroupText] = useState("");
-
+  const [machineGroupText, setMachineGroupText] = useState(""); // número máquina (libre)
   const [filesLabel, setFilesLabel] = useState("Ningún archivo seleccionado");
 
   const [name, setName] = useState("");
@@ -49,7 +53,7 @@ export default function IncidentModal({
   const [comments, setComments] = useState("");
   const [saveInfo, setSaveInfo] = useState(false);
 
-  // ====== ✅ QR: MISMO COMPORTAMIENTO QUE MachineSelection ======
+  // ====== QR (igual que MachineSelection) ======
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrError, setQrError] = useState(null);
   const qrCodeScannerRef = useRef(null);
@@ -65,7 +69,6 @@ export default function IncidentModal({
     setMachineNo(codigo);
   }
 
-  // Handler para QR nativo (igual que MachineSelection)
   useEffect(() => {
     if (!open) return;
 
@@ -93,7 +96,6 @@ export default function IncidentModal({
     };
   }, [open]);
 
-  // Modal QR web (igual que MachineSelection)
   useEffect(() => {
     const regionId = "incident-qr-modal-reader";
 
@@ -161,7 +163,7 @@ export default function IncidentModal({
     };
   }, [showQRModal]);
 
-  // ====== ✅ Cargar lista de grupos desde /machines (como MachineSelection) ======
+  // ====== cargar lista de grupos (para el SELECT) ======
   const [machines, setMachines] = useState([]);
   const [groupError, setGroupError] = useState(null);
 
@@ -179,12 +181,22 @@ export default function IncidentModal({
         setGroupError("Error cargando máquinas. Reintenta más tarde.");
       }
     }
-
     if (open) loadMachines();
   }, [open]);
 
+  // ====== ✅ RESUMEN IA PARA "Comentarios" ======
+  const summaryDoneRef = useRef(false);
+  const userEditedCommentsRef = useRef(false);
+
   useEffect(() => {
     if (!open) return;
+
+    // reinicios al abrir
+    summaryDoneRef.current = false;
+    userEditedCommentsRef.current = false;
+
+    // (opcional) dejar comments vacío para que siempre se regenere al abrir
+    setComments("");
 
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -195,15 +207,9 @@ export default function IncidentModal({
     window.addEventListener("keydown", onKey);
 
     setMachineNo(initialMachineNo || "");
-
-    // ✅ aquí es donde “escribes” el grupo que viene del chat EN EL SELECT sin cambiar diseño
     setMachineGroupSelect((initialMachineGroup || "").toUpperCase());
-
-    // ✅ el campo de la derecha se queda libre (número)
     setMachineGroupText("");
-
     setFilesLabel("Ningún archivo seleccionado");
-
     setQrError(null);
     setShowQRModal(false);
 
@@ -218,6 +224,60 @@ export default function IncidentModal({
       }
     };
   }, [open, onClose, initialMachineNo, initialMachineGroup]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (summaryDoneRef.current) return;
+    if (!Array.isArray(chatHistory) || chatHistory.length === 0) return;
+
+    // evita hacer resumen si el usuario ya escribió
+    if (userEditedCommentsRef.current) return;
+
+    summaryDoneRef.current = true;
+
+    // placeholder mientras llega
+    setComments("Generando resumen automático de la incidencia...");
+
+    const normalized = chatHistory
+      .filter((m) => m && typeof m.content === "string")
+      .slice(-30)
+      .map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: String(m.content),
+      }));
+
+    (async () => {
+      try {
+        const resp = await fetch(`${BACKEND_BASE_URL}/incident-summary`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${API_TOKEN}`,
+          },
+          body: JSON.stringify({
+            machineGroup: machineGroupSelect || initialMachineGroup || "",
+            machineNo: machineNo || "",
+            history: normalized,
+          }),
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+
+        const summary = (data?.summary || "").trim();
+
+        // si el usuario no ha editado, ponemos el resumen
+        if (!userEditedCommentsRef.current) {
+          setComments(summary || "");
+        }
+      } catch (e) {
+        console.error("Error generando resumen:", e);
+        if (!userEditedCommentsRef.current) {
+          setComments(""); // dejamos vacío si falla
+        }
+      }
+    })();
+  }, [open, chatHistory, machineNo, machineGroupSelect, initialMachineGroup]);
 
   if (!open) return null;
 
@@ -369,17 +429,11 @@ export default function IncidentModal({
             Grupo de máquinas
           </label>
 
-          {/* ✅ MISMO DISEÑO que tenías: select + input */}
+          {/* MISMO DISEÑO: select + input */}
           <div style={{ display: "flex", gap: 12 }}>
             <select
               value={machineGroupSelect}
-              onChange={(e) => {
-                // ✅ se queda escrito en ESTE MISMO CAMPO
-                setMachineGroupSelect(e.target.value);
-
-                // ✅ NO tocamos el campo de la derecha (número)
-                // (antes lo estabas copiando; ahora NO)
-              }}
+              onChange={(e) => setMachineGroupSelect(e.target.value)}
               style={{
                 flex: 1,
                 height: 48,
@@ -396,8 +450,6 @@ export default function IncidentModal({
               <option value="" disabled>
                 Selecciona el Grupo de la máquina
               </option>
-
-              {/* ✅ Lista real de máquinas (como MachineSelection) */}
               {machines.map((m, idx) => (
                 <option key={m + idx} value={m}>
                   {m}
@@ -549,30 +601,6 @@ export default function IncidentModal({
             Telefono <span style={{ color: "#dc2626" }}>*</span>
           </label>
           <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="974444444"
-            style={{
-              width: "100%",
-              height: 48,
-              borderRadius: 12,
-              border: "1px solid #d1d5db",
-              padding: "0 16px",
-              fontSize: 15,
-              outline: "none",
-              background: "#fff",
-              boxSizing: "border-box",
-              color: "#1a1a1a",
-            }}
-          />
-        </div>
-
-        {/* Email */}
-        <div style={{ marginBottom: 18 }}>
-          <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-            Email <span style={{ color: "#dc2626" }}>*</span>
-          </label>
-          <input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
@@ -636,14 +664,17 @@ export default function IncidentModal({
           </div>
         </div>
 
-        {/* Comentarios */}
+        {/* Comentarios (✅ aquí se queda el resumen IA) */}
         <div style={{ marginBottom: 18 }}>
           <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
             Comentarios
           </label>
           <textarea
             value={comments}
-            onChange={(e) => setComments(e.target.value)}
+            onChange={(e) => {
+              userEditedCommentsRef.current = true;
+              setComments(e.target.value);
+            }}
             style={{
               width: "100%",
               minHeight: 130,
@@ -717,7 +748,7 @@ export default function IncidentModal({
         </div>
       </div>
 
-      {/* --- MODAL QR (MISMO ESTILO/COMPORTAMIENTO QUE MachineSelection) --- */}
+      {/* --- MODAL QR --- */}
       {showQRModal && (
         <div
           style={{
