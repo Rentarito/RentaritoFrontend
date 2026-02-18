@@ -49,9 +49,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
   const [headerOffset, setHeaderOffset] = useState(24);
 
-  // ✅ Modal (solo diseño)
+  // ✅ Modal
   const [incidentOpen, setIncidentOpen] = useState(false);
   const [incidentBotText, setIncidentBotText] = useState("");
+  const [incidentHistory, setIncidentHistory] = useState([]); // ✅ NUEVO
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -94,8 +95,19 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [onBack]);
 
-  const openIncidentModal = (botText) => {
-    setIncidentBotText(botText || "");
+  // ✅ NUEVO: abrimos modal guardando historial hasta el mensaje clicado
+  const openIncidentModal = (clickedIndex) => {
+    const slice = chat.slice(0, clickedIndex + 1);
+
+    // Quitamos el mensaje inicial de bienvenida para no “ensuciar” el resumen
+    const withoutIntro =
+      slice.length && slice[0].role === "assistant" ? slice.slice(1) : slice;
+
+    setIncidentHistory(
+      withoutIntro.map((m) => ({ role: m.role, content: m.content }))
+    );
+
+    setIncidentBotText(chat[clickedIndex]?.content || "");
     setIncidentOpen(true);
   };
 
@@ -197,14 +209,21 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
 
           setChat((old) => [
             ...old,
-            { role: "assistant", content: makeHvoMsgText(allowed, machineNo), showCreateIncident: false },
+            {
+              role: "assistant",
+              content: makeHvoMsgText(allowed, machineNo),
+              showCreateIncident: false,
+            },
           ]);
           setLoading(false);
           return;
         }
 
         waitingFleetRef.current = true;
-        setChat((old) => [...old, { role: "assistant", content: fleetAskText, showCreateIncident: false }]);
+        setChat((old) => [
+          ...old,
+          { role: "assistant", content: fleetAskText, showCreateIncident: false },
+        ]);
         setLoading(false);
         return;
       }
@@ -262,12 +281,13 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
         backgroundSize: "cover",
       }}
     >
-      {/* ✅ Modal (solo diseño) */}
+      {/* ✅ Modal */}
       <IncidentModal
         open={incidentOpen}
         onClose={() => setIncidentOpen(false)}
         initialMachineNo={machineNo || ""}
         initialMachineGroup={machineFolder || ""}
+        chatHistory={incidentHistory} // ✅ NUEVO
         // (incidentBotText lo guardamos para el futuro; ahora no lo usamos)
       />
 
@@ -305,7 +325,7 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
               message={msg.content}
               isUser={msg.role === "user"}
               showCreateIncident={!!msg.showCreateIncident}
-              onCreateIncident={() => openIncidentModal(msg.content)}
+              onCreateIncident={() => openIncidentModal(i)} // ✅ CAMBIO
             />
           ))}
 
