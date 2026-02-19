@@ -248,7 +248,7 @@ export default function IncidentModal({
       setName(saved.name || "");
       setPhone(saved.phone || "");
       setEmail(saved.email || "");
-      setSaveInfo(true); // si hay guardado, marcamos el check
+      setSaveInfo(true);
     } catch {}
   }, [open]);
 
@@ -276,7 +276,6 @@ export default function IncidentModal({
     if (userEditedCommentsRef.current) return;
 
     summaryDoneRef.current = true;
-
     setComments("Generando resumen automático de la incidencia...");
 
     const trimmed = chatHistory
@@ -314,7 +313,7 @@ export default function IncidentModal({
 
   const SIDE_PAD = 20;
 
-  // ✅ helper: mensaje nativo exacto “Completa este campo”
+  // ✅ mensaje nativo exacto
   const setRequiredMsg = (e) => {
     const el = e.target;
     if (el.validity && el.validity.valueMissing) {
@@ -324,17 +323,15 @@ export default function IncidentModal({
     }
   };
 
-  // ✅ enviar: dispara validación nativa (tooltip) y solo si ok continúa
   const handleSubmit = (e) => {
     e?.preventDefault?.();
 
     const form = formRef.current;
     if (form && typeof form.reportValidity === "function") {
-      const ok = form.reportValidity(); // 🔥 esto muestra el tooltip nativo como tu captura
+      const ok = form.reportValidity();
       if (!ok) return;
     }
 
-    // Si llega aquí, nombre/teléfono/email están OK
     console.log("Enviar incidencia");
   };
 
@@ -350,7 +347,6 @@ export default function IncidentModal({
         textSizeAdjust: "100%",
       }}
     >
-      {/* ✅ FORM para validación nativa */}
       <form ref={formRef} onSubmit={handleSubmit} noValidate>
         <div
           style={{
@@ -630,7 +626,7 @@ export default function IncidentModal({
           {/* Nombre */}
           <div style={{ marginBottom: 18 }}>
             <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-              Nombre <span style={{ color: "#dc2626" }}>*</span>
+              Nombre
             </label>
             <input
               value={name}
@@ -657,7 +653,7 @@ export default function IncidentModal({
           {/* Teléfono */}
           <div style={{ marginBottom: 18 }}>
             <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-              Telefono <span style={{ color: "#dc2626" }}>*</span>
+              Telefono
             </label>
             <input
               value={phone}
@@ -686,7 +682,7 @@ export default function IncidentModal({
           {/* Email */}
           <div style={{ marginBottom: 18 }}>
             <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-              Email <span style={{ color: "#dc2626" }}>*</span>
+              Email
             </label>
             <input
               value={email}
@@ -785,7 +781,7 @@ export default function IncidentModal({
             />
           </div>
 
-          {/* Guardar información */}
+          {/* Guardar información (sin asterisco) */}
           <label
             style={{
               display: "flex",
@@ -821,7 +817,7 @@ export default function IncidentModal({
         >
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
             <button
-              type="submit" // ✅ dispara validación nativa también
+              type="submit"
               style={{
                 width: "100%",
                 height: 48,
