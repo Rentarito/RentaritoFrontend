@@ -11,11 +11,9 @@ const CONTACT_LS_KEY = "rentarito_incident_contact_v1";
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
-
 function formatDate(d) {
   return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
-
 function formatTime(d) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
@@ -52,10 +50,9 @@ export default function IncidentModal({
   const [comments, setComments] = useState("");
   const [saveInfo, setSaveInfo] = useState(false);
 
-  // ✅ form para validación nativa tipo “Completa este campo”
   const formRef = useRef(null);
 
-  // refs para evitar que el resumen pise si el usuario escribe
+  // resumen IA
   const userEditedCommentsRef = useRef(false);
   const summaryDoneRef = useRef(false);
 
@@ -190,7 +187,7 @@ export default function IncidentModal({
     if (open) loadMachines();
   }, [open]);
 
-  // ====== bloqueo scroll + reset al abrir ======
+  // ====== reset al abrir ======
   useEffect(() => {
     if (!open) return;
 
@@ -233,7 +230,7 @@ export default function IncidentModal({
     };
   }, [open, onClose, initialMachineNo, initialMachineGroup]);
 
-  // ====== ✅ Cargar datos guardados por dispositivo ======
+  // ====== cargar datos guardados ======
   useEffect(() => {
     if (!open) return;
     try {
@@ -252,7 +249,7 @@ export default function IncidentModal({
     } catch {}
   }, [open]);
 
-  // ====== ✅ Guardar o borrar según "Guardar información" ======
+  // ====== guardar/borrar según checkbox ======
   useEffect(() => {
     if (!open) return;
 
@@ -268,7 +265,7 @@ export default function IncidentModal({
     } catch {}
   }, [open, saveInfo, name, phone, email]);
 
-  // ====== ✅ RESUMEN IA en Comentarios ======
+  // ====== resumen IA ======
   useEffect(() => {
     if (!open) return;
     if (summaryDoneRef.current) return;
@@ -313,14 +310,11 @@ export default function IncidentModal({
 
   const SIDE_PAD = 20;
 
-  // ✅ mensaje nativo exacto
+  // tooltip nativo con texto exacto
   const setRequiredMsg = (e) => {
     const el = e.target;
-    if (el.validity && el.validity.valueMissing) {
-      el.setCustomValidity("Completa este campo");
-    } else {
-      el.setCustomValidity("");
-    }
+    if (el.validity && el.validity.valueMissing) el.setCustomValidity("Completa este campo");
+    else el.setCustomValidity("");
   };
 
   const handleSubmit = (e) => {
@@ -334,6 +328,12 @@ export default function IncidentModal({
 
     console.log("Enviar incidencia");
   };
+
+  const reqStar = (
+    <span className="req-star" aria-hidden="true">
+      *
+    </span>
+  );
 
   return (
     <div
@@ -625,8 +625,17 @@ export default function IncidentModal({
 
           {/* Nombre */}
           <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-              Nombre
+            <label
+              className="incident-required-label"
+              style={{
+                display: "block",
+                fontSize: 16,
+                fontWeight: 500,
+                marginBottom: 8,
+                color: "#1a1a1a",
+              }}
+            >
+              Nombre {reqStar}
             </label>
             <input
               value={name}
@@ -652,8 +661,17 @@ export default function IncidentModal({
 
           {/* Teléfono */}
           <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-              Telefono
+            <label
+              className="incident-required-label"
+              style={{
+                display: "block",
+                fontSize: 16,
+                fontWeight: 500,
+                marginBottom: 8,
+                color: "#1a1a1a",
+              }}
+            >
+              Telefono {reqStar}
             </label>
             <input
               value={phone}
@@ -681,8 +699,17 @@ export default function IncidentModal({
 
           {/* Email */}
           <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
-              Email
+            <label
+              className="incident-required-label"
+              style={{
+                display: "block",
+                fontSize: 16,
+                fontWeight: 500,
+                marginBottom: 8,
+                color: "#1a1a1a",
+              }}
+            >
+              Email {reqStar}
             </label>
             <input
               value={email}
@@ -781,7 +808,7 @@ export default function IncidentModal({
             />
           </div>
 
-          {/* Guardar información (sin asterisco) */}
+          {/* Guardar información (SIN asterisco) */}
           <label
             style={{
               display: "flex",

@@ -428,3 +428,9 @@ html, body, #root {
 .create-incident-btn:hover {
   background: #ffd9b3;
 }
+
+/* Asegura que NO se añada un asterisco automático por CSS en estos labels */
+label.incident-required-label::after { content: none !important; }
+
+/* Asterisco manual (el único que se verá) */
+.req-star { color: #dc2626; margin-left: 6px; }
