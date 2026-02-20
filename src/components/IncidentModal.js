@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import machineCache from "../helpers/machineCache";
-import { fetchMachines } from "../helpers/api";
 import { Html5Qrcode } from "html5-qrcode";
 
 const BACKEND_BASE_URL =
@@ -41,7 +39,6 @@ export default function IncidentModal({
 
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
   const [machineGroupSelect, setMachineGroupSelect] = useState(initialMachineGroup || "");
-  const [machineGroupText, setMachineGroupText] = useState("");
   const [filesLabel, setFilesLabel] = useState("Ningún archivo seleccionado");
 
   const [name, setName] = useState("");
@@ -166,27 +163,6 @@ export default function IncidentModal({
     };
   }, [showQRModal]);
 
-  // ====== SELECT dinámico ======
-  const [machines, setMachines] = useState([]);
-  const [groupError, setGroupError] = useState(null);
-
-  useEffect(() => {
-    async function loadMachines() {
-      try {
-        let ms = machineCache.machines;
-        if (!ms) {
-          ms = await fetchMachines();
-          machineCache.machines = ms;
-        }
-        setMachines(ms);
-        setGroupError(null);
-      } catch (e) {
-        setGroupError("Error cargando máquinas. Reintenta más tarde.");
-      }
-    }
-    if (open) loadMachines();
-  }, [open]);
-
   // ====== reset al abrir ======
   useEffect(() => {
     if (!open) return;
@@ -201,7 +177,6 @@ export default function IncidentModal({
 
     setMachineNo(initialMachineNo || "");
     setMachineGroupSelect((initialMachineGroup || "").toUpperCase());
-    setMachineGroupText("");
     setFilesLabel("Ningún archivo seleccionado");
 
     setQrError(null);
@@ -469,7 +444,7 @@ export default function IncidentModal({
             {qrError && <div style={{ color: "red", marginTop: 16 }}>{qrError}</div>}
           </div>
 
-          {/* Grupo de Máquinas */}
+          {/* Grupo de Máquinas (NO EDITABLE, VIENE DEL CHAT) */}
           <div style={{ marginBottom: 24 }}>
             <label
               style={{
@@ -483,55 +458,23 @@ export default function IncidentModal({
               Grupo de máquinas
             </label>
 
-            <div style={{ display: "flex", gap: 12 }}>
-              <select
-                className="incident-field"
-                value={machineGroupSelect}
-                onChange={(e) => setMachineGroupSelect(e.target.value)}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 12,
-                  border: "1px solid #d1d5db",
-                  padding: "0 14px",
-                  fontSize: 15,
-                  outline: "none",
-                  background: "#fff",
-                  color: machineGroupSelect ? "#1a1a1a" : "#0198f1",
-                  boxSizing: "border-box",
-                }}
-              >
-                <option value="" disabled>
-                  Selecciona el Grupo de la máquina
-                </option>
-                {machines.map((m, idx) => (
-                  <option key={m + idx} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                className="incident-field"
-                value={machineGroupText}
-                onChange={(e) => setMachineGroupText(e.target.value)}
-                placeholder="Grupo de máquina"
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: 12,
-                  border: "1px solid #d1d5db",
-                  padding: "0 16px",
-                  fontSize: 15,
-                  outline: "none",
-                  background: "#fff",
-                  boxSizing: "border-box",
-                  color: "#1a1a1a",
-                }}
-              />
-            </div>
-
-            {groupError && <div style={{ color: "red", marginTop: 16 }}>{groupError}</div>}
+            <input
+              value={machineGroupSelect}
+              disabled
+              style={{
+                width: "100%",
+                height: 48,
+                borderRadius: 12,
+                border: "1px solid #d1d5db",
+                padding: "0 16px",
+                fontSize: 15,
+                outline: "none",
+                background: "#f3f4f6",
+                boxSizing: "border-box",
+                color: "#1a1a1a",
+                cursor: "not-allowed",
+              }}
+            />
           </div>
 
           {/* Subida de archivos */}
@@ -582,7 +525,7 @@ export default function IncidentModal({
             </div>
           </div>
 
-          {/* Botón AÑADIR MÁQUINA */}
+          {/* Botón AÑADIR MÁQUINA (lo dejo tal cual lo tenías) */}
           <button
             type="button"
             onClick={() => console.log("Añadir máquina")}
