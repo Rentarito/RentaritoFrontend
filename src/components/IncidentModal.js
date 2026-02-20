@@ -40,8 +40,14 @@ export default function IncidentModal({
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
   const [machineGroupSelect, setMachineGroupSelect] = useState(initialMachineGroup || "");
   const [machineGroupText, setMachineGroupText] = useState("");
+
   const [filesLabel, setFilesLabel] = useState("Ningún archivo seleccionado");
-  const [machineNoFocused, setMachineNoFocused] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState([]); // File[]
+  const fileInputRef = useRef(null);
+
+  // máquinas añadidas
+  const [addedMachines, setAddedMachines] = useState([]); // [{id, display, machineNo, fleetCode, files}]
+  const [addMachineError, setAddMachineError] = useState(null);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -180,7 +186,13 @@ export default function IncidentModal({
     setMachineNo(initialMachineNo || "");
     setMachineGroupSelect((initialMachineGroup || "").toUpperCase());
     setMachineGroupText("");
+
     setFilesLabel("Ningún archivo seleccionado");
+    setAttachedFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    setAddedMachines([]);
+    setAddMachineError(null);
 
     setQrError(null);
     setShowQRModal(false);
@@ -295,6 +307,51 @@ export default function IncidentModal({
     else el.setCustomValidity("");
   };
 
+  const clearFiles = () => {
+    setAttachedFiles([]);
+    setFilesLabel("Ningún archivo seleccionado");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAddMachine = () => {
+    const code = (machineNo || "").trim();
+    const fleet = (machineGroupText || "").trim();
+
+    // Reglas:
+    // - Se puede añadir si hay código (machineNo) O si hay flota (machineGroupText)
+    // - NO se puede añadir si solo hay archivos
+    if (!code && !fleet) {
+      setAddMachineError(
+        "Debes escanear/escribir el código de máquina o indicar un Grupo de Máquina antes de añadir."
+      );
+      return;
+    }
+
+    setAddMachineError(null);
+
+    const display = code ? code : `${machineGroupSelect} - ${fleet}`;
+
+    const item = {
+      id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      display,
+      machineNo: code || "",
+      fleetCode: code ? "" : fleet,
+      baseMachine: machineGroupSelect || "",
+      files: attachedFiles || [],
+    };
+
+    setAddedMachines((prev) => [item, ...prev]);
+
+    // Reset inputs de añadir máquina
+    setMachineNo(""); // se puede volver a meter otro código si quiere
+    setMachineGroupText("");
+    clearFiles();
+  };
+
+  const handleDeleteMachine = (id) => {
+    setAddedMachines((prev) => prev.filter((x) => x.id !== id));
+  };
+
   const handleSubmit = (e) => {
     e?.preventDefault?.();
 
@@ -304,7 +361,8 @@ export default function IncidentModal({
       if (!ok) return;
     }
 
-    console.log("Enviar incidencia");
+    // Aquí ya tendrás addedMachines con los datos listos para enviarlos cuando implementes ENVIAR
+    console.log("Enviar incidencia", { addedMachines });
   };
 
   const reqStar = (
@@ -458,11 +516,11 @@ export default function IncidentModal({
                 color: "#1a1a1a",
               }}
             >
-              Grupo de máquinas
+              Grupo de Máquinas
             </label>
 
             <div style={{ display: "flex", gap: 12 }}>
-              {/* ✅ CAMBIO: antes era un <select>. Ahora queda fijo y sin selector */}
+              {/* IZQUIERDA FIJA: la máquina/grupo del chat (sin selector) */}
               <input
                 value={machineGroupSelect}
                 disabled
@@ -481,12 +539,12 @@ export default function IncidentModal({
                 }}
               />
 
-              {/* Campo derecho se mantiene igual */}
+              {/* DERECHA IGUAL: el usuario puede escribir la flota */}
               <input
                 className="incident-field"
                 value={machineGroupText}
                 onChange={(e) => setMachineGroupText(e.target.value)}
-                placeholder="Grupo de máquina"
+                placeholder="Grupo de Máquina"
                 style={{
                   flex: 1,
                   height: 48,
@@ -534,29 +592,30 @@ export default function IncidentModal({
               >
                 Elegir archivos
                 <input
+                  ref={fileInputRef}
                   type="file"
                   multiple
                   style={{ display: "none" }}
                   onChange={(e) => {
-                    const count = e.target.files?.length || 0;
+                    const files = Array.from(e.target.files || []);
+                    setAttachedFiles(files);
+                    const count = files.length;
                     setFilesLabel(
                       count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado"
                     );
                   }}
                 />
               </label>
-              <div style={{ color: "#6b7280", fontSize: 14, flexGrow: 1 }}>
-                {filesLabel}
-              </div>
+              <div style={{ color: "#6b7280", fontSize: 14, flexGrow: 1 }}>{filesLabel}</div>
             </div>
           </div>
 
           {/* Botón AÑADIR MÁQUINA */}
           <button
             type="button"
-            onClick={() => console.log("Añadir máquina")}
+            onClick={handleAddMachine}
             style={{
-              marginBottom: 34,
+              marginBottom: 16,
               width: "100%",
               height: 48,
               borderRadius: 24,
@@ -571,6 +630,66 @@ export default function IncidentModal({
           >
             AÑADIR MÁQUINA
           </button>
+
+          {addMachineError && (
+            <div style={{ color: "red", marginBottom: 18, fontSize: 14 }}>{addMachineError}</div>
+          )}
+
+          {/* LISTADO DE MÁQUINAS AÑADIDAS */}
+          {addedMachines.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              {addedMachines.map((m) => (
+                <div
+                  key={m.id}
+                  style={{
+                    background: "#fff",
+                    borderRadius: 16,
+                    border: "1px solid #e5e7eb",
+                    padding: 16,
+                    marginBottom: 14,
+                    boxShadow: "0 2px 14px rgba(17,24,39,0.05)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 500,
+                      color: "#111827",
+                      textAlign: "center",
+                      marginBottom: 14,
+                    }}
+                  >
+                    <span style={{ fontWeight: 400 }}>Identificador de Máquina:</span>{" "}
+                    <span style={{ fontWeight: 700 }}>{m.display}</span>
+                  </div>
+
+                  {Array.isArray(m.files) && m.files.length > 0 && (
+                    <div style={{ textAlign: "center", color: "#6b7280", fontSize: 13, marginTop: -6, marginBottom: 12 }}>
+                      Archivos adjuntos: {m.files.length}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMachine(m.id)}
+                    style={{
+                      width: "100%",
+                      height: 48,
+                      borderRadius: 24,
+                      border: "none",
+                      background: "#0198f1",
+                      color: "white",
+                      fontSize: 15,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    DELETE
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Encabezado INFORMACIÓN DE CONTACTO */}
           <div
@@ -711,15 +830,7 @@ export default function IncidentModal({
           </div>
 
           {/* Fecha y Hora */}
-          <div
-            style={{
-              marginTop: 14,
-              marginBottom: 10,
-              color: "#6b7280",
-              fontStyle: "italic",
-              fontSize: 13,
-            }}
-          >
+          <div style={{ marginTop: 14, marginBottom: 10, color: "#6b7280", fontStyle: "italic", fontSize: 13 }}>
             Fecha y Hora de la solicitud (esto se realiza automaticamente)
           </div>
 
@@ -771,15 +882,7 @@ export default function IncidentModal({
 
           {/* Comentarios */}
           <div style={{ marginBottom: 18 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 16,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: "#1a1a1a",
-              }}
-            >
+            <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
               Comentarios
             </label>
             <textarea
