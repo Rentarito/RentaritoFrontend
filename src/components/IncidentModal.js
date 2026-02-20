@@ -16,6 +16,14 @@ function formatTime(d) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
+function isImageFile(file) {
+  const t = (file?.type || "").toLowerCase();
+  if (t.startsWith("image/")) return true;
+
+  const name = (file?.name || "").toLowerCase();
+  return /\.(png|jpe?g|gif|webp|bmp|heic|heif)$/i.test(name);
+}
+
 function ScanIcon() {
   return (
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -46,7 +54,8 @@ export default function IncidentModal({
   const fileInputRef = useRef(null);
 
   // máquinas añadidas
-  const [addedMachines, setAddedMachines] = useState([]); // [{id, display, machineNo, fleetCode, files}]
+  // attachments: [{ file, name, type, previewUrl }]
+  const [addedMachines, setAddedMachines] = useState([]);
   const [addMachineError, setAddMachineError] = useState(null);
 
   const [name, setName] = useState("");
@@ -66,6 +75,14 @@ export default function IncidentModal({
   const [qrError, setQrError] = useState(null);
   const qrCodeScannerRef = useRef(null);
   const prevNativeHandlerRef = useRef(null);
+
+  const revokeAttachments = (attachments = []) => {
+    try {
+      attachments.forEach((a) => {
+        if (a?.previewUrl) URL.revokeObjectURL(a.previewUrl);
+      });
+    } catch {}
+  };
 
   function handleMachineFromQr(decodedText) {
     const codigo = (decodedText || "").trim();
@@ -191,7 +208,11 @@ export default function IncidentModal({
     setAttachedFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
 
-    setAddedMachines([]);
+    // revocar previews al reset
+    setAddedMachines((prevMachines) => {
+      prevMachines.forEach((m) => revokeAttachments(m.attachments));
+      return [];
+    });
     setAddMachineError(null);
 
     setQrError(null);
@@ -317,9 +338,8 @@ export default function IncidentModal({
     const code = (machineNo || "").trim();
     const fleet = (machineGroupText || "").trim();
 
-    // Reglas:
-    // - Se puede añadir si hay código (machineNo) O si hay flota (machineGroupText)
     // - NO se puede añadir si solo hay archivos
+    // - Se puede añadir si hay código (machineNo) O flota (machineGroupText)
     if (!code && !fleet) {
       setAddMachineError(
         "Debes escanear/escribir el código de máquina o indicar un Grupo de Máquina antes de añadir."
@@ -331,25 +351,40 @@ export default function IncidentModal({
 
     const display = code ? code : `${machineGroupSelect} - ${fleet}`;
 
+    // Guardamos archivos en el item con preview si es imagen
+    const attachments = (attachedFiles || []).map((f) => {
+      const img = isImageFile(f);
+      return {
+        file: f,
+        name: f?.name || "archivo",
+        type: f?.type || "",
+        previewUrl: img ? URL.createObjectURL(f) : null,
+      };
+    });
+
     const item = {
       id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
       display,
       machineNo: code || "",
       fleetCode: code ? "" : fleet,
       baseMachine: machineGroupSelect || "",
-      files: attachedFiles || [],
+      attachments,
     };
 
     setAddedMachines((prev) => [item, ...prev]);
 
     // Reset inputs de añadir máquina
-    setMachineNo(""); // se puede volver a meter otro código si quiere
+    setMachineNo("");
     setMachineGroupText("");
     clearFiles();
   };
 
   const handleDeleteMachine = (id) => {
-    setAddedMachines((prev) => prev.filter((x) => x.id !== id));
+    setAddedMachines((prev) => {
+      const toDelete = prev.find((x) => x.id === id);
+      if (toDelete) revokeAttachments(toDelete.attachments);
+      return prev.filter((x) => x.id !== id);
+    });
   };
 
   const handleSubmit = (e) => {
@@ -361,7 +396,6 @@ export default function IncidentModal({
       if (!ok) return;
     }
 
-    // Aquí ya tendrás addedMachines con los datos listos para enviarlos cuando implementes ENVIAR
     console.log("Enviar incidencia", { addedMachines });
   };
 
@@ -520,7 +554,7 @@ export default function IncidentModal({
             </label>
 
             <div style={{ display: "flex", gap: 12 }}>
-              {/* IZQUIERDA FIJA: la máquina/grupo del chat (sin selector) */}
+              {/* IZQUIERDA FIJA (chat) */}
               <input
                 value={machineGroupSelect}
                 disabled
@@ -539,7 +573,7 @@ export default function IncidentModal({
                 }}
               />
 
-              {/* DERECHA IGUAL: el usuario puede escribir la flota */}
+              {/* DERECHA (flota) */}
               <input
                 className="incident-field"
                 value={machineGroupText}
@@ -656,16 +690,94 @@ export default function IncidentModal({
                       fontWeight: 500,
                       color: "#111827",
                       textAlign: "center",
-                      marginBottom: 14,
+                      marginBottom: 12,
                     }}
                   >
                     <span style={{ fontWeight: 400 }}>Identificador de Máquina:</span>{" "}
                     <span style={{ fontWeight: 700 }}>{m.display}</span>
                   </div>
 
-                  {Array.isArray(m.files) && m.files.length > 0 && (
-                    <div style={{ textAlign: "center", color: "#6b7280", fontSize: 13, marginTop: -6, marginBottom: 12 }}>
-                      Archivos adjuntos: {m.files.length}
+                  {/* ✅ AQUÍ SE MUESTRAN LOS ARCHIVOS (como en tu ejemplo) */}
+                  {Array.isArray(m.attachments) && m.attachments.length > 0 && (
+                    <div style={{ marginBottom: 14 }}>
+                      <div
+                        style={{
+                          textAlign: "center",
+                          color: "#6b7280",
+                          fontSize: 13,
+                          marginBottom: 10,
+                        }}
+                      >
+                        Archivos adjuntos: {m.attachments.length}
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 10,
+                          justifyContent: "center",
+                        }}
+                      >
+                        {m.attachments.map((a, idx) => {
+                          const img = !!a.previewUrl;
+                          return (
+                            <div
+                              key={(a.name || "file") + idx}
+                              style={{
+                                border: "1px solid #e5e7eb",
+                                borderRadius: 12,
+                                padding: 8,
+                                background: "#f9fafb",
+                                maxWidth: 160,
+                              }}
+                            >
+                              {img ? (
+                                <img
+                                  src={a.previewUrl}
+                                  alt={a.name}
+                                  style={{
+                                    width: 140,
+                                    height: 90,
+                                    objectFit: "cover",
+                                    borderRadius: 8,
+                                    display: "block",
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: 140,
+                                    height: 90,
+                                    borderRadius: 8,
+                                    background: "#fff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#6b7280",
+                                    fontSize: 22,
+                                  }}
+                                >
+                                  📎
+                                </div>
+                              )}
+
+                              <div
+                                style={{
+                                  marginTop: 8,
+                                  fontSize: 12,
+                                  color: "#374151",
+                                  wordBreak: "break-word",
+                                  textAlign: "center",
+                                }}
+                                title={a.name}
+                              >
+                                {a.name}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
