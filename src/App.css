@@ -434,3 +434,14 @@ label.incident-required-label::after { content: none !important; }
 
 /* Asterisco manual (el único que se verá) */
 .req-star { color: #dc2626; margin-left: 6px; }
+
+/* Resaltado azul al enfocar campos del parte de avería (IncidentModal) */
+.incident-field {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.incident-field:focus,
+.incident-field:focus-visible {
+  border-color: #0198f1 !important;          /* mismo azul que los botones */
+  box-shadow: 0 0 0 3px rgba(1, 152, 241, 0.25);
+}

@@ -406,6 +406,7 @@ export default function IncidentModal({
             >
               <div style={{ height: 48 }}>
                 <input
+                  className="incident-field"
                   value={machineNo}
                   onChange={(e) => setMachineNo(e.target.value)}
                   placeholder="Escribe o Escanea el código"
@@ -484,6 +485,7 @@ export default function IncidentModal({
 
             <div style={{ display: "flex", gap: 12 }}>
               <select
+                className="incident-field"
                 value={machineGroupSelect}
                 onChange={(e) => setMachineGroupSelect(e.target.value)}
                 style={{
@@ -510,6 +512,7 @@ export default function IncidentModal({
               </select>
 
               <input
+                className="incident-field"
                 value={machineGroupText}
                 onChange={(e) => setMachineGroupText(e.target.value)}
                 placeholder="Grupo de máquina"
@@ -638,6 +641,7 @@ export default function IncidentModal({
               Nombre {reqStar}
             </label>
             <input
+              className="incident-field"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nombre"
@@ -674,6 +678,7 @@ export default function IncidentModal({
               Telefono {reqStar}
             </label>
             <input
+              className="incident-field"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="974444444"
@@ -712,6 +717,7 @@ export default function IncidentModal({
               Email {reqStar}
             </label>
             <input
+              className="incident-field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
@@ -736,14 +742,25 @@ export default function IncidentModal({
           </div>
 
           {/* Fecha y Hora */}
-          <div style={{ marginTop: 14, marginBottom: 10, color: "#6b7280", fontStyle: "italic", fontSize: 13 }}>
+          <div
+            style={{
+              marginTop: 14,
+              marginBottom: 10,
+              color: "#6b7280",
+              fontStyle: "italic",
+              fontSize: 13,
+            }}
+          >
             Fecha y Hora de la solicitud (esto se realiza automaticamente)
           </div>
 
           <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Fecha</div>
+              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>
+                Fecha
+              </div>
               <input
+                className="incident-field"
                 value={formatDate(now)}
                 disabled
                 style={{
@@ -761,8 +778,11 @@ export default function IncidentModal({
             </div>
 
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Hora</div>
+              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>
+                Hora
+              </div>
               <input
+                className="incident-field"
                 value={formatTime(now)}
                 disabled
                 style={{
@@ -782,10 +802,19 @@ export default function IncidentModal({
 
           {/* Comentarios */}
           <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 16,
+                fontWeight: 500,
+                marginBottom: 8,
+                color: "#1a1a1a",
+              }}
+            >
               Comentarios
             </label>
             <textarea
+              className="incident-field"
               value={comments}
               onChange={(e) => {
                 userEditedCommentsRef.current = true;
