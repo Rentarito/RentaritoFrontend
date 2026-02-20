@@ -39,7 +39,9 @@ export default function IncidentModal({
 
   const [machineNo, setMachineNo] = useState(initialMachineNo || "");
   const [machineGroupSelect, setMachineGroupSelect] = useState(initialMachineGroup || "");
+  const [machineGroupText, setMachineGroupText] = useState("");
   const [filesLabel, setFilesLabel] = useState("Ningún archivo seleccionado");
+  const [machineNoFocused, setMachineNoFocused] = useState(false);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -177,6 +179,7 @@ export default function IncidentModal({
 
     setMachineNo(initialMachineNo || "");
     setMachineGroupSelect((initialMachineGroup || "").toUpperCase());
+    setMachineGroupText("");
     setFilesLabel("Ningún archivo seleccionado");
 
     setQrError(null);
@@ -444,7 +447,7 @@ export default function IncidentModal({
             {qrError && <div style={{ color: "red", marginTop: 16 }}>{qrError}</div>}
           </div>
 
-          {/* Grupo de Máquinas (NO EDITABLE, VIENE DEL CHAT) */}
+          {/* Grupo de Máquinas */}
           <div style={{ marginBottom: 24 }}>
             <label
               style={{
@@ -458,23 +461,46 @@ export default function IncidentModal({
               Grupo de máquinas
             </label>
 
-            <input
-              value={machineGroupSelect}
-              disabled
-              style={{
-                width: "100%",
-                height: 48,
-                borderRadius: 12,
-                border: "1px solid #d1d5db",
-                padding: "0 16px",
-                fontSize: 15,
-                outline: "none",
-                background: "#f3f4f6",
-                boxSizing: "border-box",
-                color: "#1a1a1a",
-                cursor: "not-allowed",
-              }}
-            />
+            <div style={{ display: "flex", gap: 12 }}>
+              {/* ✅ CAMBIO: antes era un <select>. Ahora queda fijo y sin selector */}
+              <input
+                value={machineGroupSelect}
+                disabled
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 12,
+                  border: "1px solid #d1d5db",
+                  padding: "0 16px",
+                  fontSize: 15,
+                  outline: "none",
+                  background: "#f3f4f6",
+                  boxSizing: "border-box",
+                  color: "#1a1a1a",
+                  cursor: "not-allowed",
+                }}
+              />
+
+              {/* Campo derecho se mantiene igual */}
+              <input
+                className="incident-field"
+                value={machineGroupText}
+                onChange={(e) => setMachineGroupText(e.target.value)}
+                placeholder="Grupo de máquina"
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 12,
+                  border: "1px solid #d1d5db",
+                  padding: "0 16px",
+                  fontSize: 15,
+                  outline: "none",
+                  background: "#fff",
+                  boxSizing: "border-box",
+                  color: "#1a1a1a",
+                }}
+              />
+            </div>
           </div>
 
           {/* Subida de archivos */}
@@ -525,7 +551,7 @@ export default function IncidentModal({
             </div>
           </div>
 
-          {/* Botón AÑADIR MÁQUINA (lo dejo tal cual lo tenías) */}
+          {/* Botón AÑADIR MÁQUINA */}
           <button
             type="button"
             onClick={() => console.log("Añadir máquina")}
