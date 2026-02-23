@@ -4,6 +4,11 @@ import { Html5Qrcode } from "html5-qrcode";
 const BACKEND_BASE_URL =
   process.env.REACT_APP_BACKEND_URL || "https://rentaritobackend-swcw.onrender.com";
 
+const INCIDENT_SUBMIT_URL = `${BACKEND_BASE_URL}/incident-submit`;
+
+// (Opcional) si algún día decides validar token en backend, aquí lo tienes listo
+const API_TOKEN = process.env.REACT_APP_API_TOKEN || "rentarito123secure";
+
 const CONTACT_LS_KEY = "rentarito_incident_contact_v1";
 
 function pad2(n) {
@@ -14,6 +19,12 @@ function formatDate(d) {
 }
 function formatTime(d) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+// ISO local sin milisegundos: YYYY-MM-DDTHH:mm:ss
+function toLocalIsoNoMs(d) {
+  const tzOffsetMs = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffsetMs).toISOString().slice(0, 19);
 }
 
 function isImageFile(file) {
@@ -63,6 +74,11 @@ export default function IncidentModal({
   const [email, setEmail] = useState("");
   const [comments, setComments] = useState("");
   const [saveInfo, setSaveInfo] = useState(false);
+
+  // ENVIAR
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitOk, setSubmitOk] = useState(null);
 
   const formRef = useRef(null);
 
@@ -208,7 +224,6 @@ export default function IncidentModal({
     setAttachedFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
 
-    // revocar previews al reset
     setAddedMachines((prevMachines) => {
       prevMachines.forEach((m) => revokeAttachments(m.attachments));
       return [];
@@ -218,16 +233,19 @@ export default function IncidentModal({
     setQrError(null);
     setShowQRModal(false);
 
-    // reset resumen
     summaryDoneRef.current = false;
     userEditedCommentsRef.current = false;
     setComments("");
 
-    // reset contacto (luego se auto-carga si hay guardado)
     setName("");
     setPhone("");
     setEmail("");
     setSaveInfo(false);
+
+    // reset envío
+    setSubmitting(false);
+    setSubmitError(null);
+    setSubmitOk(null);
 
     return () => {
       document.body.style.overflow = prev;
@@ -321,7 +339,6 @@ export default function IncidentModal({
 
   const SIDE_PAD = 20;
 
-  // tooltip nativo con texto exacto
   const setRequiredMsg = (e) => {
     const el = e.target;
     if (el.validity && el.validity.valueMissing) el.setCustomValidity("Completa este campo");
@@ -338,8 +355,6 @@ export default function IncidentModal({
     const code = (machineNo || "").trim();
     const fleet = (machineGroupText || "").trim();
 
-    // - NO se puede añadir si solo hay archivos
-    // - Se puede añadir si hay código (machineNo) O flota (machineGroupText)
     if (!code && !fleet) {
       setAddMachineError(
         "Debes escanear/escribir el código de máquina o indicar un Grupo de Máquina antes de añadir."
@@ -351,7 +366,6 @@ export default function IncidentModal({
 
     const display = code ? code : `${machineGroupSelect} - ${fleet}`;
 
-    // Guardamos archivos en el item con preview si es imagen
     const attachments = (attachedFiles || []).map((f) => {
       const img = isImageFile(f);
       return {
@@ -373,7 +387,6 @@ export default function IncidentModal({
 
     setAddedMachines((prev) => [item, ...prev]);
 
-    // Reset inputs de añadir máquina
     setMachineNo("");
     setMachineGroupText("");
     clearFiles();
@@ -387,8 +400,13 @@ export default function IncidentModal({
     });
   };
 
-  const handleSubmit = (e) => {
+  // ✅ ENVIAR REAL
+  const handleSubmit = async (e) => {
     e?.preventDefault?.();
+    if (submitting) return;
+
+    setSubmitError(null);
+    setSubmitOk(null);
 
     const form = formRef.current;
     if (form && typeof form.reportValidity === "function") {
@@ -396,7 +414,86 @@ export default function IncidentModal({
       if (!ok) return;
     }
 
-    console.log("Enviar incidencia", { addedMachines });
+    if (!Array.isArray(addedMachines) || addedMachines.length === 0) {
+      setSubmitError("Debes añadir al menos una máquina antes de enviar.");
+      return;
+    }
+
+    // 1) Flatten líneas + archivos (para poder mapear fileIndex -> PictureURL)
+    const allFiles = [];
+    const lines = [];
+
+    for (const m of addedMachines) {
+      const rentalElementNo = (m.machineNo || m.fleetCode || m.display || "").trim();
+      const atts = Array.isArray(m.attachments) ? m.attachments : [];
+
+      if (atts.length > 0) {
+        for (const a of atts) {
+          if (a?.file) {
+            const fileIndex = allFiles.length;
+            allFiles.push(a.file);
+            lines.push({ rentalElementNo, fileIndex });
+          } else {
+            lines.push({ rentalElementNo });
+          }
+        }
+      } else {
+        lines.push({ rentalElementNo });
+      }
+    }
+
+    const meta = {
+      requestType: "AVERIA",
+      requestDate: toLocalIsoNoMs(new Date()),
+      contact: {
+        name: (name || "").trim(),
+        phone: (phone || "").trim(),
+        email: (email || "").trim(),
+      },
+      comments: (comments || "").trim(),
+      lines,
+    };
+
+    try {
+      setSubmitting(true);
+
+      const fd = new FormData();
+      fd.append("meta", JSON.stringify(meta));
+      allFiles.forEach((f, idx) => {
+        fd.append("files", f, f?.name || `archivo_${idx}`);
+      });
+
+      const resp = await fetch(INCIDENT_SUBMIT_URL, {
+        method: "POST",
+        headers: {
+          // NO pongas Content-Type aquí (FormData lo pone solo)
+          Authorization: `Bearer ${API_TOKEN}`,
+        },
+        body: fd,
+      });
+
+      const text = await resp.text();
+      let data = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { raw: text };
+      }
+
+      if (!resp.ok) {
+        const msg = data?.error || data?.message || `Error enviando (HTTP ${resp.status})`;
+        throw new Error(msg);
+      }
+
+      setSubmitOk(data?.resultMsg || "Incidencia enviada correctamente.");
+      // Si quieres cerrar automáticamente al enviar:
+      // setTimeout(() => onClose?.(), 800);
+    } catch (err) {
+      console.error(err);
+      setSubmitError(err?.message || "Error enviando la incidencia.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const reqStar = (
@@ -554,7 +651,6 @@ export default function IncidentModal({
             </label>
 
             <div style={{ display: "flex", gap: 12 }}>
-              {/* IZQUIERDA FIJA (chat) */}
               <input
                 value={machineGroupSelect}
                 disabled
@@ -573,7 +669,6 @@ export default function IncidentModal({
                 }}
               />
 
-              {/* DERECHA (flota) */}
               <input
                 className="incident-field"
                 value={machineGroupText}
@@ -697,7 +792,6 @@ export default function IncidentModal({
                     <span style={{ fontWeight: 700 }}>{m.display}</span>
                   </div>
 
-                  {/* ✅ AQUÍ SE MUESTRAN LOS ARCHIVOS (como en tu ejemplo) */}
                   {Array.isArray(m.attachments) && m.attachments.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
                       <div
@@ -1041,6 +1135,18 @@ export default function IncidentModal({
             />
             Guardar Informacion
           </label>
+
+          {/* Mensajes resultado envío */}
+          {submitError && (
+            <div style={{ marginTop: 16, color: "red", fontSize: 14, fontWeight: 700 }}>
+              {submitError}
+            </div>
+          )}
+          {submitOk && (
+            <div style={{ marginTop: 16, color: "#16a34a", fontSize: 14, fontWeight: 800 }}>
+              {submitOk}
+            </div>
+          )}
         </div>
 
         {/* Botón ENVIAR fijo */}
@@ -1058,6 +1164,7 @@ export default function IncidentModal({
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
             <button
               type="submit"
+              disabled={submitting}
               style={{
                 width: "100%",
                 height: 48,
@@ -1068,10 +1175,11 @@ export default function IncidentModal({
                 fontSize: 15,
                 fontWeight: 800,
                 letterSpacing: "0.5px",
-                cursor: "pointer",
+                cursor: submitting ? "not-allowed" : "pointer",
+                opacity: submitting ? 0.75 : 1,
               }}
             >
-              ENVIAR
+              {submitting ? "ENVIANDO..." : "ENVIAR"}
             </button>
           </div>
         </div>
