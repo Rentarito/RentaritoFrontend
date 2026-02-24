@@ -480,9 +480,18 @@ export default function IncidentModal({
         data = { raw: text };
       }
 
+      // ✅ NUEVO: mostrar details/resultMsg/raw si existe
       if (!resp.ok) {
         const msg = data?.error || data?.message || `Error enviando (HTTP ${resp.status})`;
-        throw new Error(msg);
+        const details = data?.details || data?.resultMsg || data?.raw;
+        throw new Error(details ? `${msg} — ${details}` : msg);
+      }
+
+      // ✅ NUEVO: por seguridad, si backend devolviese ok=false con 200
+      if (data?.ok === false) {
+        const msg = data?.error || "Business Central rechazó la solicitud";
+        const details = data?.resultMsg || data?.details || data?.raw;
+        throw new Error(details ? `${msg} — ${details}` : msg);
       }
 
       setSubmitOk(data?.resultMsg || "Incidencia enviada correctamente.");
