@@ -21,11 +21,10 @@ function formatTime(d) {
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
-// ✅ NUEVO: DD/MM/YYYY HH:mm (como tu ejemplo)
-function toDdMmYyyyHhMm(d) {
-  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(
-    d.getHours()
-  )}:${pad2(d.getMinutes())}`;
+// ISO local sin milisegundos: YYYY-MM-DDTHH:mm:ss
+function toLocalIsoNoMs(d) {
+  const tzOffsetMs = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffsetMs).toISOString().slice(0, 19);
 }
 
 function isImageFile(file) {
@@ -420,7 +419,7 @@ export default function IncidentModal({
       return;
     }
 
-    // Flatten líneas + archivos
+    // 1) Flatten líneas + archivos (para poder mapear fileIndex -> PictureURL)
     const allFiles = [];
     const lines = [];
 
@@ -445,8 +444,7 @@ export default function IncidentModal({
 
     const meta = {
       requestType: "AVERIA",
-      // ✅ CAMBIO: fecha como tu ejemplo
-      requestDate: toDdMmYyyyHhMm(new Date()),
+      requestDate: toLocalIsoNoMs(new Date()),
       contact: {
         name: (name || "").trim(),
         phone: (phone || "").trim(),
@@ -482,12 +480,14 @@ export default function IncidentModal({
         data = { raw: text };
       }
 
+      // ✅ NUEVO: mostrar details/resultMsg/raw si existe
       if (!resp.ok) {
         const msg = data?.error || data?.message || `Error enviando (HTTP ${resp.status})`;
         const details = data?.details || data?.resultMsg || data?.raw;
         throw new Error(details ? `${msg} — ${details}` : msg);
       }
 
+      // ✅ NUEVO: por seguridad, si backend devolviese ok=false con 200
       if (data?.ok === false) {
         const msg = data?.error || "Business Central rechazó la solicitud";
         const details = data?.resultMsg || data?.details || data?.raw;
@@ -495,6 +495,8 @@ export default function IncidentModal({
       }
 
       setSubmitOk(data?.resultMsg || "Incidencia enviada correctamente.");
+      // Si quieres cerrar automáticamente al enviar:
+      // setTimeout(() => onClose?.(), 800);
     } catch (err) {
       console.error(err);
       setSubmitError(err?.message || "Error enviando la incidencia.");
@@ -1043,15 +1045,7 @@ export default function IncidentModal({
           </div>
 
           {/* Fecha y Hora */}
-          <div
-            style={{
-              marginTop: 14,
-              marginBottom: 10,
-              color: "#6b7280",
-              fontStyle: "italic",
-              fontSize: 13,
-            }}
-          >
+          <div style={{ marginTop: 14, marginBottom: 10, color: "#6b7280", fontStyle: "italic", fontSize: 13 }}>
             Fecha y Hora de la solicitud (esto se realiza automaticamente)
           </div>
 
@@ -1103,15 +1097,7 @@ export default function IncidentModal({
 
           {/* Comentarios */}
           <div style={{ marginBottom: 18 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 16,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: "#1a1a1a",
-              }}
-            >
+            <label style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}>
               Comentarios
             </label>
             <textarea
