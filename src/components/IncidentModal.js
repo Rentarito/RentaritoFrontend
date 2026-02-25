@@ -419,38 +419,51 @@ export default function IncidentModal({
       return;
     }
 
-    // 1) Flatten líneas + archivos (para poder mapear fileIndex -> PictureURL)
+    // 1) Construimos:
+    // - allFiles: lista global de ficheros
+    // - lines: una línea por máquina con fileIndexes[]
     const allFiles = [];
     const lines = [];
 
     for (const m of addedMachines) {
       const rentalElementNo = (m.machineNo || m.fleetCode || m.display || "").trim();
+
+      const fileIndexes = [];
       const atts = Array.isArray(m.attachments) ? m.attachments : [];
 
-      if (atts.length > 0) {
-        for (const a of atts) {
-          if (a?.file) {
-            const fileIndex = allFiles.length;
-            allFiles.push(a.file);
-            lines.push({ rentalElementNo, fileIndex });
-          } else {
-            lines.push({ rentalElementNo });
-          }
+      for (const a of atts) {
+        if (a?.file) {
+          const idx = allFiles.length;
+          allFiles.push(a.file);
+          fileIndexes.push(idx);
         }
-      } else {
-        lines.push({ rentalElementNo });
       }
+
+      lines.push({
+        rentalElementNo,
+        // ✅ estos dos campos ayudan al backend a resolver flota->ARBMCHNo si hace falta
+        groupCode: (m.baseMachine || "").trim(),
+        fleetCode: (m.fleetCode || "").trim(),
+        fileIndexes,
+      });
     }
+
+    const cleanComments = (() => {
+      const c = (comments || "").trim();
+      // si sigue el placeholder y el usuario no lo tocó, mandamos vacío
+      if (!userEditedCommentsRef.current && c.toLowerCase().includes("generando resumen")) return "";
+      return c;
+    })();
 
     const meta = {
       requestType: "AVERIA",
-      requestDate: toLocalIsoNoMs(new Date()),
+      requestDate: toLocalIsoNoMs(new Date()), // backend lo convertirá a dd/MM/yyyy HH:mm
       contact: {
         name: (name || "").trim(),
         phone: (phone || "").trim(),
         email: (email || "").trim(),
       },
-      comments: (comments || "").trim(),
+      comments: cleanComments,
       lines,
     };
 
@@ -480,14 +493,12 @@ export default function IncidentModal({
         data = { raw: text };
       }
 
-      // ✅ NUEVO: mostrar details/resultMsg/raw si existe
       if (!resp.ok) {
         const msg = data?.error || data?.message || `Error enviando (HTTP ${resp.status})`;
         const details = data?.details || data?.resultMsg || data?.raw;
         throw new Error(details ? `${msg} — ${details}` : msg);
       }
 
-      // ✅ NUEVO: por seguridad, si backend devolviese ok=false con 200
       if (data?.ok === false) {
         const msg = data?.error || "Business Central rechazó la solicitud";
         const details = data?.resultMsg || data?.details || data?.raw;
