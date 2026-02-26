@@ -11,7 +11,8 @@ const API_TOKEN = process.env.REACT_APP_API_TOKEN || "rentarito123secure";
 
 const CONTACT_LS_KEY = "rentarito_incident_contact_v1";
 
-// ✅ Nota: para volver a selección de máquinas, preferimos hacerlo vía callback (SPA)
+// ✅ ruta a pantalla de selección de máquinas
+const MACHINE_SELECT_PATH = process.env.REACT_APP_MACHINE_SELECT_PATH || "/";
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -110,7 +111,6 @@ function SuccessScreen({ onBack }) {
 export default function IncidentModal({
   open,
   onClose,
-  onBackToMachineSelection,
   initialMachineNo = "",
   initialMachineGroup = "",
   chatHistory = [],
@@ -458,30 +458,32 @@ export default function IncidentModal({
   };
 
   const goBackToMachineSelection = () => {
-    // 1) Cerramos el modal
-    try {
-      onClose?.();
-    } catch {}
+  try {
+    onClose?.();
+  } catch {}
 
-    // 2) Volvemos a la selección sin recargar (App.js controla la pantalla)
-    if (typeof onBackToMachineSelection === "function") {
-      // microtask para evitar estados intermedios raros
-      setTimeout(() => {
-        try {
-          onBackToMachineSelection();
-        } catch {}
-      }, 0);
-      return;
-    }
+  // Mantener query params (importante para ?secret=Rentarito.2025)
+  const search = window.location.search || "";
+  const hash = window.location.hash || "";
 
-    // 3) Fallback: recargar manteniendo query params (ej. ?secret=Rentarito.2025)
-    const url = `${window.location.pathname}${window.location.search}`;
-    try {
-      window.location.assign(url);
-    } catch {
-      window.location.href = url;
-    }
-  };
+  let target = MACHINE_SELECT_PATH || "/";
+
+  // Si la ruta no trae ya "?", añadimos el search actual (ej. ?secret=...)
+  if (search && !target.includes("?")) {
+    target += search;
+  }
+
+  // Mantener hash si lo hubiese (por si usas hash routing)
+  if (hash && !target.includes("#")) {
+    target += hash;
+  }
+
+  try {
+    window.location.assign(target);
+  } catch {
+    window.location.href = target;
+  }
+};
 
   // ✅ ENVIAR REAL
   const handleSubmit = async (e) => {
@@ -801,157 +803,208 @@ export default function IncidentModal({
             </div>
           </div>
 
-          {/* Adjuntos */}
+          {/* Subida de archivos */}
           <div style={{ marginBottom: 24 }}>
-            <label
+            <div
               style={{
-                display: "block",
-                fontSize: 16,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: "#1a1a1a",
+                minHeight: 48,
+                borderRadius: 12,
+                border: "1px solid #d1d5db",
+                background: "#fff",
+                display: "flex",
+                alignItems: "center",
+                padding: "12px 16px",
+                gap: 12,
+                boxSizing: "border-box",
               }}
             >
-              Adjuntar archivo
-            </label>
-
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  setAttachedFiles(files);
-                  setFilesLabel(files.length ? `${files.length} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado");
+              <label
+                style={{
+                  border: "1px solid #6b7280",
+                  borderRadius: 6,
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                  background: "#f3f4f6",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  fontSize: 14,
+                  color: "#1a1a1a",
                 }}
-                style={{ flex: 1 }}
-              />
-              <div style={{ fontSize: 12, color: "#6b7280" }}>{filesLabel}</div>
+              >
+                Elegir archivos
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setAttachedFiles(files);
+                    const count = files.length;
+                    setFilesLabel(count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado");
+                  }}
+                />
+              </label>
+              <div style={{ color: "#6b7280", fontSize: 14, flexGrow: 1 }}>{filesLabel}</div>
             </div>
           </div>
 
+          {/* Botón AÑADIR MÁQUINA */}
           <button
             type="button"
             onClick={handleAddMachine}
             style={{
+              marginBottom: 16,
               width: "100%",
               height: 48,
               borderRadius: 24,
               border: "none",
-              background: "#111827",
+              background: "#0198f1",
               color: "white",
               fontSize: 15,
               fontWeight: 800,
               letterSpacing: "0.5px",
               cursor: "pointer",
-              marginBottom: 14,
             }}
           >
             AÑADIR MÁQUINA
           </button>
 
-          {addMachineError && (
-            <div style={{ color: "red", fontWeight: 700, marginBottom: 16 }}>{addMachineError}</div>
-          )}
+          {addMachineError && <div style={{ color: "red", marginBottom: 18, fontSize: 14 }}>{addMachineError}</div>}
 
-          {/* Máquinas añadidas */}
+          {/* LISTADO DE MÁQUINAS AÑADIDAS */}
           {addedMachines.length > 0 && (
-            <div style={{ marginBottom: 22 }}>
+            <div style={{ marginBottom: 28 }}>
               {addedMachines.map((m) => (
                 <div
                   key={m.id}
                   style={{
                     background: "#fff",
-                    borderRadius: 14,
-                    padding: 14,
+                    borderRadius: 16,
                     border: "1px solid #e5e7eb",
-                    marginBottom: 12,
+                    padding: 16,
+                    marginBottom: 14,
+                    boxShadow: "0 2px 14px rgba(17,24,39,0.05)",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <div style={{ fontWeight: 900, color: "#111827" }}>{m.display}</div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteMachine(m.id)}
-                      style={{
-                        border: "none",
-                        background: "transparent",
-                        color: "#ef4444",
-                        fontWeight: 900,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Eliminar
-                    </button>
+                  <div
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 500,
+                      color: "#111827",
+                      textAlign: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span style={{ fontWeight: 400 }}>Identificador de Máquina:</span>{" "}
+                    <span style={{ fontWeight: 700 }}>{m.display}</span>
                   </div>
 
-                  {/* Adjuntos preview */}
                   {Array.isArray(m.attachments) && m.attachments.length > 0 && (
-                    <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 10 }}>
-                      {m.attachments.map((a, idx) => {
-                        const isImg = !!a.previewUrl;
-                        return (
-                          <div key={idx} style={{ width: 90 }}>
-                            {isImg ? (
-                              <img
-                                src={a.previewUrl}
-                                alt={a.name}
-                                style={{
-                                  width: 90,
-                                  height: 70,
-                                  objectFit: "cover",
-                                  borderRadius: 10,
-                                  border: "1px solid #e5e7eb",
-                                }}
-                              />
-                            ) : (
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ textAlign: "center", color: "#6b7280", fontSize: 13, marginBottom: 10 }}>
+                        Archivos adjuntos: {m.attachments.length}
+                      </div>
+
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+                        {m.attachments.map((a, idx) => {
+                          const img = !!a.previewUrl;
+                          return (
+                            <div
+                              key={(a.name || "file") + idx}
+                              style={{
+                                border: "1px solid #e5e7eb",
+                                borderRadius: 12,
+                                padding: 8,
+                                background: "#f9fafb",
+                                maxWidth: 160,
+                              }}
+                            >
+                              {img ? (
+                                <img
+                                  src={a.previewUrl}
+                                  alt={a.name}
+                                  style={{
+                                    width: 140,
+                                    height: 90,
+                                    objectFit: "cover",
+                                    borderRadius: 8,
+                                    display: "block",
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: 140,
+                                    height: 90,
+                                    borderRadius: 8,
+                                    background: "#fff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#6b7280",
+                                    fontSize: 22,
+                                  }}
+                                >
+                                  📎
+                                </div>
+                              )}
+
                               <div
                                 style={{
-                                  width: 90,
-                                  height: 70,
-                                  borderRadius: 10,
-                                  border: "1px solid #e5e7eb",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: 11,
+                                  marginTop: 8,
+                                  fontSize: 12,
                                   color: "#374151",
-                                  padding: 6,
-                                  boxSizing: "border-box",
+                                  wordBreak: "break-word",
                                   textAlign: "center",
                                 }}
+                                title={a.name}
                               >
                                 {a.name}
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMachine(m.id)}
+                    style={{
+                      width: "100%",
+                      height: 48,
+                      borderRadius: 24,
+                      border: "none",
+                      background: "#0198f1",
+                      color: "white",
+                      fontSize: 15,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    DELETE
+                  </button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* DATOS CLIENTE */}
+          {/* Encabezado INFORMACIÓN DE CONTACTO */}
           <div
             style={{
               background: "#ffffff",
               marginLeft: -SIDE_PAD,
               marginRight: -SIDE_PAD,
               padding: "22px 24px",
-              marginBottom: 18,
-              borderTop: "1px solid #e5e7eb",
-              borderBottom: "1px solid #e5e7eb",
-              fontWeight: 900,
-              letterSpacing: "0.5px",
-              color: "#1a1a1a",
+              marginBottom: 22,
             }}
           >
-            DATOS DEL CLIENTE
+            <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: "0.6px", margin: 0, color: "#1a1a1a" }}>
+              INFORMACIÓN DE CONTACTO
+            </h2>
           </div>
 
           {/* Nombre */}
