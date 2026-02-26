@@ -285,10 +285,10 @@ export default function Chat({ machineFolder, machineNo, onBack }) {
       <IncidentModal
         open={incidentOpen}
         onClose={() => setIncidentOpen(false)}
+        onBackToMachineSelection={onBack}   // ✅ AÑADIR
         initialMachineNo={machineNo || ""}
         initialMachineGroup={machineFolder || ""}
-        chatHistory={incidentHistory} // ✅ NUEVO
-        // (incidentBotText lo guardamos para el futuro; ahora no lo usamos)
+        chatHistory={incidentHistory}
       />
 
       <div style={{ height: headerOffset, flexShrink: 0 }} />
