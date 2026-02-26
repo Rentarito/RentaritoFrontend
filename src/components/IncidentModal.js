@@ -11,6 +11,9 @@ const API_TOKEN = process.env.REACT_APP_API_TOKEN || "rentarito123secure";
 
 const CONTACT_LS_KEY = "rentarito_incident_contact_v1";
 
+// ✅ ruta a pantalla de selección de máquinas
+const MACHINE_SELECT_PATH = process.env.REACT_APP_MACHINE_SELECT_PATH || "/";
+
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -47,6 +50,107 @@ function ScanIcon() {
   );
 }
 
+function SuccessScreen({ onBack }) {
+  const BLUE = "#0198f1";
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "#ffffff",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Header estilo app */}
+      <div
+        style={{
+          height: "calc(64px + env(safe-area-inset-top))",
+          paddingTop: "env(safe-area-inset-top)",
+          display: "flex",
+          alignItems: "center",
+          paddingLeft: 16,
+          paddingRight: 16,
+          borderBottom: "1px solid #eef2f7",
+          boxSizing: "border-box",
+        }}
+      >
+        <button
+          type="button"
+          onClick={onBack}
+          style={{
+            border: "none",
+            background: "transparent",
+            fontSize: 22,
+            lineHeight: 1,
+            cursor: "pointer",
+            color: "#111827",
+          }}
+          aria-label="Volver"
+          title="Volver"
+        >
+          ←
+        </button>
+
+        <div style={{ flex: 1, textAlign: "center" }}>
+          <div style={{ fontWeight: 800, fontSize: 20, color: BLUE, lineHeight: 1 }}>
+            Rentaire
+          </div>
+          <div style={{ fontSize: 10, letterSpacing: 0.8, color: "#7c8aa5", marginTop: 2 }}>
+            ALQUILER DE MAQUINARIA
+          </div>
+        </div>
+
+        {/* “campana” decorativa */}
+        <div style={{ width: 32, textAlign: "right", color: "#111827", fontSize: 20 }}>🔔</div>
+      </div>
+
+      {/* Contenido */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          boxSizing: "border-box",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 520, textAlign: "center" }}>
+          <div style={{ fontSize: 34, fontWeight: 900, color: "#111827", marginBottom: 10 }}>
+            ¡Confirmado!
+          </div>
+
+          <div style={{ fontSize: 18, color: "#6b7280", lineHeight: 1.35, marginBottom: 22 }}>
+            Hemos recibido tu solicitud, en breve te contactaremos.
+          </div>
+
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              width: "100%",
+              height: 54,
+              borderRadius: 28,
+              border: "none",
+              background: BLUE,
+              color: "white",
+              fontSize: 18,
+              fontWeight: 800,
+              cursor: "pointer",
+              boxShadow: "0 10px 28px rgba(1,152,241,0.25)",
+            }}
+          >
+            Volver a RentAIrito
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function IncidentModal({
   open,
   onClose,
@@ -79,6 +183,9 @@ export default function IncidentModal({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitOk, setSubmitOk] = useState(null);
+
+  // ✅ nuevo: pantalla confirmación
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const formRef = useRef(null);
 
@@ -247,6 +354,9 @@ export default function IncidentModal({
     setSubmitError(null);
     setSubmitOk(null);
 
+    // ✅ reset confirmación
+    setShowSuccess(false);
+
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
@@ -335,16 +445,6 @@ export default function IncidentModal({
     })();
   }, [open, chatHistory, initialMachineGroup, initialMachineNo]);
 
-  if (!open) return null;
-
-  const SIDE_PAD = 20;
-
-  const setRequiredMsg = (e) => {
-    const el = e.target;
-    if (el.validity && el.validity.valueMissing) el.setCustomValidity("Completa este campo");
-    else el.setCustomValidity("");
-  };
-
   const clearFiles = () => {
     setAttachedFiles([]);
     setFilesLabel("Ningún archivo seleccionado");
@@ -400,6 +500,19 @@ export default function IncidentModal({
     });
   };
 
+  const goBackToMachineSelection = () => {
+    try {
+      onClose?.();
+    } catch {}
+    // Navegación simple (sin depender de React Router)
+    try {
+      window.location.assign(MACHINE_SELECT_PATH);
+    } catch {
+      // fallback
+      window.location.href = MACHINE_SELECT_PATH;
+    }
+  };
+
   // ✅ ENVIAR REAL
   const handleSubmit = async (e) => {
     e?.preventDefault?.();
@@ -419,9 +532,7 @@ export default function IncidentModal({
       return;
     }
 
-    // 1) Construimos:
-    // - allFiles: lista global de ficheros
-    // - lines: una línea por máquina con fileIndexes[]
+    // Flatten líneas + archivos
     const allFiles = [];
     const lines = [];
 
@@ -441,7 +552,6 @@ export default function IncidentModal({
 
       lines.push({
         rentalElementNo,
-        // ✅ estos dos campos ayudan al backend a resolver flota->ARBMCHNo si hace falta
         groupCode: (m.baseMachine || "").trim(),
         fleetCode: (m.fleetCode || "").trim(),
         fileIndexes,
@@ -450,14 +560,13 @@ export default function IncidentModal({
 
     const cleanComments = (() => {
       const c = (comments || "").trim();
-      // si sigue el placeholder y el usuario no lo tocó, mandamos vacío
       if (!userEditedCommentsRef.current && c.toLowerCase().includes("generando resumen")) return "";
       return c;
     })();
 
     const meta = {
       requestType: "AVERIA",
-      requestDate: toLocalIsoNoMs(new Date()), // backend lo convertirá a dd/MM/yyyy HH:mm
+      requestDate: toLocalIsoNoMs(new Date()),
       contact: {
         name: (name || "").trim(),
         phone: (phone || "").trim(),
@@ -479,7 +588,6 @@ export default function IncidentModal({
       const resp = await fetch(INCIDENT_SUBMIT_URL, {
         method: "POST",
         headers: {
-          // NO pongas Content-Type aquí (FormData lo pone solo)
           Authorization: `Bearer ${API_TOKEN}`,
         },
         body: fd,
@@ -506,14 +614,30 @@ export default function IncidentModal({
       }
 
       setSubmitOk(data?.resultMsg || "Incidencia enviada correctamente.");
-      // Si quieres cerrar automáticamente al enviar:
-      // setTimeout(() => onClose?.(), 800);
+
+      // ✅ mostrar pantalla de confirmación
+      setShowSuccess(true);
     } catch (err) {
       console.error(err);
       setSubmitError(err?.message || "Error enviando la incidencia.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  if (!open) return null;
+
+  // ✅ Si ya se envió OK, mostramos pantalla confirmación
+  if (showSuccess) {
+    return <SuccessScreen onBack={goBackToMachineSelection} />;
+  }
+
+  const SIDE_PAD = 20;
+
+  const setRequiredMsg = (e) => {
+    const el = e.target;
+    if (el.validity && el.validity.valueMissing) el.setCustomValidity("Completa este campo");
+    else el.setCustomValidity("");
   };
 
   const reqStar = (
@@ -620,10 +744,7 @@ export default function IncidentModal({
                 <button
                   type="button"
                   onClick={() => {
-                    if (
-                      typeof window !== "undefined" &&
-                      typeof window.openNativeQrScanner === "function"
-                    ) {
+                    if (typeof window !== "undefined" && typeof window.openNativeQrScanner === "function") {
                       window.openNativeQrScanner();
                     } else {
                       setShowQRModal(true);
@@ -749,9 +870,7 @@ export default function IncidentModal({
                     const files = Array.from(e.target.files || []);
                     setAttachedFiles(files);
                     const count = files.length;
-                    setFilesLabel(
-                      count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado"
-                    );
+                    setFilesLabel(count ? `${count} archivo(s) seleccionado(s)` : "Ningún archivo seleccionado");
                   }}
                 />
               </label>
@@ -780,9 +899,7 @@ export default function IncidentModal({
             AÑADIR MÁQUINA
           </button>
 
-          {addMachineError && (
-            <div style={{ color: "red", marginBottom: 18, fontSize: 14 }}>{addMachineError}</div>
-          )}
+          {addMachineError && <div style={{ color: "red", marginBottom: 18, fontSize: 14 }}>{addMachineError}</div>}
 
           {/* LISTADO DE MÁQUINAS AÑADIDAS */}
           {addedMachines.length > 0 && (
@@ -814,25 +931,11 @@ export default function IncidentModal({
 
                   {Array.isArray(m.attachments) && m.attachments.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
-                      <div
-                        style={{
-                          textAlign: "center",
-                          color: "#6b7280",
-                          fontSize: 13,
-                          marginBottom: 10,
-                        }}
-                      >
+                      <div style={{ textAlign: "center", color: "#6b7280", fontSize: 13, marginBottom: 10 }}>
                         Archivos adjuntos: {m.attachments.length}
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 10,
-                          justifyContent: "center",
-                        }}
-                      >
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
                         {m.attachments.map((a, idx) => {
                           const img = !!a.previewUrl;
                           return (
@@ -927,15 +1030,7 @@ export default function IncidentModal({
               marginBottom: 22,
             }}
           >
-            <h2
-              style={{
-                fontSize: 20,
-                fontWeight: 900,
-                letterSpacing: "0.6px",
-                margin: 0,
-                color: "#1a1a1a",
-              }}
-            >
+            <h2 style={{ fontSize: 20, fontWeight: 900, letterSpacing: "0.6px", margin: 0, color: "#1a1a1a" }}>
               INFORMACIÓN DE CONTACTO
             </h2>
           </div>
@@ -944,13 +1039,7 @@ export default function IncidentModal({
           <div style={{ marginBottom: 18 }}>
             <label
               className="incident-required-label"
-              style={{
-                display: "block",
-                fontSize: 16,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: "#1a1a1a",
-              }}
+              style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}
             >
               Nombre {reqStar}
             </label>
@@ -981,13 +1070,7 @@ export default function IncidentModal({
           <div style={{ marginBottom: 18 }}>
             <label
               className="incident-required-label"
-              style={{
-                display: "block",
-                fontSize: 16,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: "#1a1a1a",
-              }}
+              style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}
             >
               Telefono {reqStar}
             </label>
@@ -1020,13 +1103,7 @@ export default function IncidentModal({
           <div style={{ marginBottom: 18 }}>
             <label
               className="incident-required-label"
-              style={{
-                display: "block",
-                fontSize: 16,
-                fontWeight: 500,
-                marginBottom: 8,
-                color: "#1a1a1a",
-              }}
+              style={{ display: "block", fontSize: 16, fontWeight: 500, marginBottom: 8, color: "#1a1a1a" }}
             >
               Email {reqStar}
             </label>
@@ -1062,9 +1139,7 @@ export default function IncidentModal({
 
           <div style={{ display: "flex", gap: 12, marginBottom: 18 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>
-                Fecha
-              </div>
+              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Fecha</div>
               <input
                 className="incident-field"
                 value={formatDate(now)}
@@ -1084,9 +1159,7 @@ export default function IncidentModal({
             </div>
 
             <div style={{ flex: 1 }}>
-              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>
-                Hora
-              </div>
+              <div style={{ color: "#9ca3af", fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Hora</div>
               <input
                 className="incident-field"
                 value={formatTime(now)}
@@ -1135,7 +1208,7 @@ export default function IncidentModal({
             />
           </div>
 
-          {/* Guardar información (SIN asterisco) */}
+          {/* Guardar información */}
           <label
             style={{
               display: "flex",
@@ -1158,14 +1231,10 @@ export default function IncidentModal({
 
           {/* Mensajes resultado envío */}
           {submitError && (
-            <div style={{ marginTop: 16, color: "red", fontSize: 14, fontWeight: 700 }}>
-              {submitError}
-            </div>
+            <div style={{ marginTop: 16, color: "red", fontSize: 14, fontWeight: 700 }}>{submitError}</div>
           )}
           {submitOk && (
-            <div style={{ marginTop: 16, color: "#16a34a", fontSize: 14, fontWeight: 800 }}>
-              {submitOk}
-            </div>
+            <div style={{ marginTop: 16, color: "#16a34a", fontSize: 14, fontWeight: 800 }}>{submitOk}</div>
           )}
         </div>
 
@@ -1272,14 +1341,7 @@ export default function IncidentModal({
                 overflow: "hidden",
               }}
             />
-            <div
-              style={{
-                color: "#0198f1",
-                marginTop: 12,
-                textAlign: "center",
-                fontWeight: "bold",
-              }}
-            >
+            <div style={{ color: "#0198f1", marginTop: 12, textAlign: "center", fontWeight: "bold" }}>
               Apunta con la cámara al QR
             </div>
           </div>
